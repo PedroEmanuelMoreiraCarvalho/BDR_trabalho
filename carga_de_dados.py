@@ -15,7 +15,7 @@ DB_CONFIG = {
     'password': 'admin123'  # Ajuste sua senha
 }
 
-NOME_BANCO = 'teste_bdr'
+NOME_BANCO = 'teste_final'
 
 def salvar_metadados(metadados, nome_arquivo="metadados_carga.json"):
     """
@@ -869,6 +869,7 @@ def carregar_votacoes_votos(caminho_arquivo):
                     id_deputado = converter_para_int(linha[1] if len(linha) > 1 else None)
                     voto = linha[2].strip() if len(linha) > 2 and linha[2] else None
                     sigla_partido = linha[3].strip() if len(linha) > 3 and linha[3] else None
+                    print(sigla_partido)
 
                     if not id_votacao or not id_deputado or not voto:
                         erro_msg = "Dados obrigatórios faltando"
@@ -2305,27 +2306,27 @@ if __name__ == "__main__":
     print(f"Banco alvo: {NOME_BANCO}")
     print("-" * 50)
     
-    arquivo_deputados_csv = r'dados_finais\deputados.csv'
-    carregar_deputados(arquivo_deputados_csv)
-    arquivo_votacao_csv = r'dados_finais\votacoes.csv'  
-    carregar_votacao(arquivo_votacao_csv)
-    arquivo_orientacao_csv = r'dados_finais\votacoes_orientacoes.csv' #ainda contaminados (fk's inexistentes)
-    carregar_votacoes_orientacoes(arquivo_orientacao_csv)
-    arquivo_votos_csv = r'dados_limpos\votacoes_votos.csv'
+    # arquivo_deputados_csv = r'dados_finais\deputados.csv'
+    # carregar_deputados(arquivo_deputados_csv)
+    # arquivo_votacao_csv = r'dados_finais\votacoes.csv'  
+    # carregar_votacao(arquivo_votacao_csv)
+    # arquivo_orientacao_csv = r'dados_finais\votacoes_orientacoes.csv' #ainda contaminados (fk's inexistentes)
+    # carregar_votacoes_orientacoes(arquivo_orientacao_csv)
+    arquivo_votos_csv = r'dados_finais\votacoes_votos.csv'
     carregar_votacoes_votos(arquivo_votos_csv)
-    arquivo_despesas_csv = r'dados_finais\despesas.csv' #ainda contaminados
-    carregar_despesas(arquivo_despesas_csv)
-    arquivo_eventos_csv = r'dados_finais\eventos.csv' #ainda contaminados
-    carregar_eventos(arquivo_eventos_csv)
-    arquivo_presenca_csv = r'dados_finais\presencas_resumo.csv' #ainda contaminados (fk's inexistentes)
-    carregar_presenca_deputados(arquivo_presenca_csv)
-    arquivo_frentes_csv = r'dados_finais\frentes_deputados.csv' #ainda contaminados (não tem data de inicio nem fim e fk's inexistentes)
-    carregar_frentes_deputados(arquivo_frentes_csv)
+    # arquivo_despesas_csv = r'dados_finais\despesas.csv' #ainda contaminados
+    # carregar_despesas(arquivo_despesas_csv)
+    # arquivo_eventos_csv = r'dados_finais\eventos.csv' #ainda contaminados
+    # carregar_eventos(arquivo_eventos_csv)
+    # arquivo_presenca_csv = r'dados_finais\presencas_resumo.csv' #ainda contaminados (fk's inexistentes)
+    # carregar_presenca_deputados(arquivo_presenca_csv)
+    # arquivo_frentes_csv = r'dados_finais\frentes_deputados.csv' #ainda contaminados (não tem data de inicio nem fim e fk's inexistentes)
+    # carregar_frentes_deputados(arquivo_frentes_csv)
 
-    arquivo_proposicoes_csv = r'dados_finais\proposicoes.csv' #ainda contaminados (fk's inexistentes)
-    carregar_proposicoes(arquivo_proposicoes_csv)
+    # arquivo_proposicoes_csv = r'dados_finais\proposicoes.csv' #ainda contaminados (fk's inexistentes)
+    # carregar_proposicoes(arquivo_proposicoes_csv)
 
-    arquivo_proposicoes_autores_csv = r'dados_finais\proposicoes_autores.csv' #ainda contaminados (fk's inexistentes)
-    carregar_proposicoes_autores(arquivo_proposicoes_autores_csv)
-    arquivo_proposicoes_temas_csv = r'dados_finais\proposicoes_temas.csv' #ainda contaminados (fk's inexistentes)
-    carregar_proposicoes_temas(arquivo_proposicoes_temas_csv)
+    # arquivo_proposicoes_autores_csv = r'dados_finais\proposicoes_autores.csv' #ainda contaminados (fk's inexistentes)
+    # carregar_proposicoes_autores(arquivo_proposicoes_autores_csv)
+    # arquivo_proposicoes_temas_csv = r'dados_finais\proposicoes_temas.csv' #ainda contaminados (fk's inexistentes)
+    # carregar_proposicoes_temas(arquivo_proposicoes_temas_csv)
