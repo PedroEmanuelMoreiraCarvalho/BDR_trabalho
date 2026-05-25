@@ -2305,14 +2305,14 @@ if __name__ == "__main__":
     print(f"Banco alvo: {NOME_BANCO}")
     print("-" * 50)
     
-    # arquivo_deputados_csv = r'dados_finais\deputados.csv'
-    # carregar_deputados(arquivo_deputados_csv)
-    # arquivo_votacao_csv = r'dados_finais\votacoes.csv'  
-    # carregar_votacao(arquivo_votacao_csv)
-    # arquivo_orientacao_csv = r'dados_finais\votacoes_orientacoes.csv' #ainda contaminados (fk's inexistentes)
-    # carregar_votacoes_orientacoes(arquivo_orientacao_csv)
-    # arquivo_votos_csv = r'dados_limpos\votacoes_votos.csv'
-    # carregar_votacoes_votos(arquivo_votos_csv)
+    arquivo_deputados_csv = r'dados_finais\deputados.csv'
+    carregar_deputados(arquivo_deputados_csv)
+    arquivo_votacao_csv = r'dados_finais\votacoes.csv'  
+    carregar_votacao(arquivo_votacao_csv)
+    arquivo_orientacao_csv = r'dados_finais\votacoes_orientacoes.csv' #ainda contaminados (fk's inexistentes)
+    carregar_votacoes_orientacoes(arquivo_orientacao_csv)
+    arquivo_votos_csv = r'dados_limpos\votacoes_votos.csv'
+    carregar_votacoes_votos(arquivo_votos_csv)
     arquivo_despesas_csv = r'dados_finais\despesas.csv' #ainda contaminados
     carregar_despesas(arquivo_despesas_csv)
     arquivo_eventos_csv = r'dados_finais\eventos.csv' #ainda contaminados
