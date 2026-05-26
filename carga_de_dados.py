@@ -15,7 +15,7 @@ DB_CONFIG = {
     'password': 'admin123'  # Ajuste sua senha
 }
 
-NOME_BANCO = 'teste_final'
+NOME_BANCO = 'meu_banco'
 
 def salvar_metadados(metadados, nome_arquivo="metadados_carga.json"):
     """
@@ -515,14 +515,21 @@ def carregar_votacao(caminho_arquivo):
                     ultima_apresentacao_descricao = linha[13].strip() if len(linha) > 13 and linha[13] else None
                     id_proposicao = converter_para_int(linha[14] if len(linha) > 14 else None)
                     
-                    if not id_votacao or not data_votacao or not id_evento:
-                        erro_msg = "Dados obrigatórios faltando: id_votacao, data_votacao ou id_evento"
+                    if not id_votacao or not data_votacao:
+                        erro_msg = "Dados obrigatórios faltando: id_votacao, data_votacao"
                         registrar_erro(arquivo_log, 'votacao', linha_atual, linha, erro_msg)
                         erros += 1
                         linhas_erro.append(linha_atual)
                         linha_atual += 1
                         continue
-                    
+                    if  (not id_evento and not id_proposicao):
+                        erro_msg = "Dados obrigatórios faltando: id_evento e id_proposicao"
+                        registrar_erro(arquivo_log, 'votacao', linha_atual, linha, erro_msg)
+                        erros += 1
+                        linhas_erro.append(linha_atual)
+                        linha_atual += 1
+                        continue
+
                     try:
                         cursor.execute("""
                             INSERT INTO votacao (
@@ -2306,10 +2313,10 @@ if __name__ == "__main__":
     print(f"Banco alvo: {NOME_BANCO}")
     print("-" * 50)
     
-    arquivo_deputados_csv = r'dados_finais\deputados.csv'
-    carregar_deputados(arquivo_deputados_csv)
+    # arquivo_deputados_csv = r'dados_finais\deputados.csv'
+    # carregar_deputados(arquivo_deputados_csv)
     arquivo_votacao_csv = r'dados_finais\votacoes.csv'  
-    arregar_votacao(arquivo_votacao_csv)
+    carregar_votacao(arquivo_votacao_csv)
     arquivo_orientacao_csv = r'dados_finais\votacoes_orientacoes.csv' #ainda contaminados (fk's inexistentes)
     carregar_votacoes_orientacoes(arquivo_orientacao_csv)
     arquivo_votos_csv = r'dados_finais\votacoes_votos.csv'
