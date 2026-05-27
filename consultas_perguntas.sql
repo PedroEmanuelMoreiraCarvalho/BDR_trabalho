@@ -82,6 +82,68 @@ FROM despesas des
 GROUP BY des.fornecedor_nome, des.fornecedor_cnpj_cpf
 ORDER BY total_contrato DESC;
 
+-- 6) Correlacionar escolaridade com:
+-- 6a) Gastos
+SELECT
+    COALESCE(d.escolaridade_deputado, 'Sem informação') AS escolaridade,
+    SUM(COALESCE(des.valor_liquido, 0)) AS total_gasto,
+    AVG(COALESCE(des.valor_liquido, 0)) AS gasto_medio
+FROM despesas des
+JOIN deputados d ON d.id_deputado = des.id_deputado
+-- WHERE des.ano = :ano
+GROUP BY COALESCE(d.escolaridade_deputado, 'Sem informação')
+ORDER BY total_gasto DESC;
+
+-- 6b) Fidelidade partidária (alinhamento com orientação)
+SELECT
+    COALESCE(d.escolaridade_deputado, 'Sem informação') AS escolaridade,
+    COUNT(*) FILTER (WHERE vo.orientacao IN ('Sim', 'Não') AND vv.voto IN ('Sim', 'Não')) AS total_considerado,
+    COUNT(*) FILTER (WHERE vo.orientacao = vv.voto AND vo.orientacao IN ('Sim', 'Não')) AS total_alinhado,
+    ROUND(
+        CASE
+            WHEN COUNT(*) FILTER (WHERE vo.orientacao IN ('Sim', 'Não') AND vv.voto IN ('Sim', 'Não')) = 0 THEN 0
+            ELSE 100.0 * COUNT(*) FILTER (WHERE vo.orientacao = vv.voto AND vo.orientacao IN ('Sim', 'Não'))
+                 / COUNT(*) FILTER (WHERE vo.orientacao IN ('Sim', 'Não') AND vv.voto IN ('Sim', 'Não'))
+        END,
+        2
+    ) AS perc_alinhamento
+FROM votacoes_orientacoes vo
+JOIN votacoes_votos vv ON vv.id_votacao = vo.id_votacao AND vv.deputado_sigla_partido = vo.sigla_bancada
+JOIN deputados d ON d.id_deputado = vv.id_deputado
+GROUP BY COALESCE(d.escolaridade_deputado, 'Sem informação')
+ORDER BY perc_alinhamento DESC;
+
+-- 6c) Nº de proposições (autoria)
+SELECT
+    COALESCE(d.escolaridade_deputado, 'Sem informação') AS escolaridade,
+    COUNT(DISTINCT pa.id_proposicao) AS total_proposicoes
+FROM proposicoes_autores pa
+LEFT JOIN deputados d ON d.id_deputado = pa.id_deputado
+GROUP BY COALESCE(d.escolaridade_deputado, 'Sem informação')
+ORDER BY total_proposicoes DESC;
+
+-- 6d) Presença em comissões (tabela presenca_deputados anual por deputado)
+SELECT
+    COALESCE(d.escolaridade_deputado, 'Sem informação') AS escolaridade,
+    SUM(COALESCE(p.comissoes_presencas, 0)) AS total_presencas_comissoes,
+    AVG(COALESCE(p.comissoes_presencas, 0)) AS media_presencas_comissoes
+FROM presenca_deputados p
+JOIN deputados d ON d.id_deputado = p.id_dep
+-- WHERE p.ano_presenca = :ano
+GROUP BY COALESCE(d.escolaridade_deputado, 'Sem informação')
+ORDER BY total_presencas_comissoes DESC;
+
+-- 6e) Presença no plenário (tabela presenca_deputados anual por deputado)
+SELECT
+    COALESCE(d.escolaridade_deputado, 'Sem informação') AS escolaridade,
+    SUM(COALESCE(p.plenario_presencas, 0)) AS total_presencas_plenario,
+    AVG(COALESCE(p.plenario_presencas, 0)) AS media_presencas_plenario
+FROM presenca_deputados p
+JOIN deputados d ON d.id_deputado = p.id_dep
+-- WHERE p.ano_presenca = :ano
+GROUP BY COALESCE(d.escolaridade_deputado, 'Sem informação')
+ORDER BY total_presencas_plenario DESC;
+
 -- 10) Ordenar partidos conforme alinhamento interno
 -- Alinhamento = % de votos iguais à orientação do partido (quando orientação é Sim/Não)
 SELECT
