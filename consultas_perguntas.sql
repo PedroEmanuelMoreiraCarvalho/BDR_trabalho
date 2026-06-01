@@ -166,118 +166,227 @@ ORDER BY total_presencas_plenario DESC;
 WITH
 pesos AS (
     SELECT
-    3.0::numeric AS peso_proposicao,
+        7.0::numeric AS peso_proposicao,
         1.0::numeric AS peso_plenario,
         1.0::numeric AS peso_comissoes
 ),
+
 gastos AS (
     SELECT
-        des.id_deputado AS id_deputado,
+        des.id_deputado,
         SUM(COALESCE(des.valor_liquido, 0)) AS total_gasto
     FROM despesas des
-    -- WHERE des.ano = :ano
     GROUP BY des.id_deputado
 ),
+
+autoria AS (
+    SELECT
+        id_proposicao,
+        COUNT(*) AS qtd_autores
+    FROM proposicoes_autores
+    GROUP BY id_proposicao
+),
+
 proposicoes_score AS (
     SELECT
         pa.id_deputado,
+
         COUNT(DISTINCT pa.id_proposicao) AS total_proposicoes,
+
         SUM(
-            CASE
-                -- Grupo A — Produção Legislativa Estrutural
-                WHEN p.cod_tipo_proposicao = 123 THEN 10.0 -- PEC: Proposta de Emenda Constitucional
-                WHEN p.cod_tipo_proposicao = 136 THEN 8.0  -- PLP: Projeto de Lei Complementar
-                WHEN p.cod_tipo_proposicao = 139 THEN 6.0  -- PL: Projeto de Lei
-                WHEN p.cod_tipo_proposicao = 291 THEN 6.0  -- MPV: Medida Provisória
-                WHEN p.cod_tipo_proposicao = 341 THEN 5.0  -- PDC: Projeto de Decreto Legislativo
-                WHEN p.cod_tipo_proposicao = 347 THEN 5.0  -- PRC: Projeto de Resolução
-                WHEN p.cod_tipo_proposicao = 348 THEN 5.0  -- PRN: Projeto de Resolução (CN)
-                -- Grupo B — Fiscalização e Controle
-                WHEN p.cod_tipo_proposicao = 182 THEN 4.0  -- PFC: Proposta de Fiscalização e Controle
-                WHEN p.cod_tipo_proposicao = 294 THEN 4.0  -- RCP: Requerimento de CPI
-                WHEN p.cod_tipo_proposicao = 292 THEN 3.0  -- RIC: Requerimento de Informação
-                -- (SIT) não mapeado aqui: confirme o código exato no seu dataset
-                -- Grupo C — Atuação Processual
-                WHEN p.cod_tipo_proposicao = 322 THEN 2.0  -- REC: Recurso
-                WHEN p.cod_tipo_proposicao = 285 THEN 2.0  -- EMC: Emenda de Comissão
-                WHEN p.cod_tipo_proposicao = 280 THEN 2.0  -- EMP: Emenda de Plenário
-                WHEN p.cod_tipo_proposicao = 288 THEN 2.0  -- EMS: Emenda/Substitutivo
-                WHEN p.cod_tipo_proposicao = 340 THEN 3.0  -- SBT: Substitutivo
-                -- Grupo D — Requerimentos (peso base; urgência pode ser tratada via status/ementa)
-                WHEN p.cod_tipo_proposicao IN (296, 392) THEN 0.5 -- REQ: Requerimento / Requerimento de Urgência (Art. 155)
-                -- Grupo E — Baixíssimo impacto
-                WHEN p.cod_tipo_proposicao = 171 THEN 0.5  -- IND: Indicação
-                WHEN p.cod_tipo_proposicao = 134 THEN 0.0  -- MSC: Mensagem
-                WHEN p.cod_tipo_proposicao = 610 THEN 0.0  -- OF/DOC: Documento/Ofício (confira a descrição na sua base)
-                WHEN p.cod_tipo_proposicao = 276 THEN 0.2  -- PET: Petição
-                WHEN p.cod_tipo_proposicao = 227 THEN 0.2  -- CON: Consulta
-                -- Padrão para tipos não mapeados
-                ELSE 0.5
-            END
+            /* =========================
+               PESO DO TIPO
+               ========================= */
+            (
+                CASE
+                    /* Grupo 0 - PEC e PL*/
+                    WHEN p.sigla_tipo_proposicao IN (
+                        'PEC'
+                    ) THEN 20.0
+                    WHEN p.sigla_tipo_proposicao IN (
+                        'PL'
+                    ) THEN 15.0
+
+                    /* Grupo A - Produção Legislativa */
+                    WHEN p.sigla_tipo_proposicao IN (
+                        'PLP','MPV','PDC','PRC','PRN'
+                    ) THEN 10.0
+
+                    /* Grupo B - Fiscalização */
+                    WHEN p.sigla_tipo_proposicao IN (
+                        'PFC','RIC','RCP','INC'
+                    ) THEN 5.0
+
+                    /* Grupo C - Emendas e aperfeiçoamentos */
+                    WHEN p.sigla_tipo_proposicao IN (
+                        'EMC','EMP','EMS','ESP',
+                        'EMR','EMRP',
+                        'SBT','SSP'
+                    ) THEN 2.0
+
+                    /* Grupo D - Demais proposições */
+                    ELSE 0.1
+
+                END
+            )
             *
-            CASE
-                -- Aprovação plena
-                WHEN p.ultimo_status_id_situacao IN (1140, 1150) THEN 1.0
-                -- Aprovação na Câmara (tramitando no Senado)
-                WHEN p.ultimo_status_id_situacao IN (926, 1303) THEN 0.8
-                -- Avanço relevante (pronta para pauta)
-                WHEN p.ultimo_status_id_situacao IN (924) THEN 0.5
-                -- Fracasso
-                WHEN p.ultimo_status_id_situacao IN (923, 930, 931, 1120, 941, 950) THEN 0.0
-                -- Demais situações: peso neutro baixo
-                ELSE 0.2
-            END
-            + CASE
-                -- Bônus por aprovação em algum estágio
-                WHEN p.ultimo_status_id_tipo_tramitacao = 240 THEN 0.1
-                ELSE 0.0
-              END
+            /* =========================
+               PESO DA SITUAÇÃO
+               ========================= */
+            (
+                CASE
+
+                    /* APROVADA */
+                    WHEN p.ultimo_status_id_situacao IN (
+                        1140
+                    ) THEN 1.00
+
+                    /* AVANÇADA */
+                    WHEN p.ultimo_status_id_situacao IN (
+                        900,
+                        926,
+                        1150,
+                        1293,
+                        939
+                    ) THEN 0.75
+
+                    /* REJEITADA */
+                    WHEN p.ultimo_status_id_situacao IN (
+                        923,
+                        941,
+                        950,
+                        1120,
+                        1222,
+                        1292
+                    ) THEN 0.00
+
+                    /* EM TRAMITAÇÃO */
+                    ELSE 0.25
+
+                END
+            )
+
+            *
+
+            /* =========================
+               PESO DE AUTORIA
+               ========================= */
+
+            (
+                CASE
+                    /* autor único */
+                    WHEN a.qtd_autores = 1 THEN
+                        1.0
+                    /* autor principal */
+                    WHEN pa.ordem_assinatura = 1 THEN
+                        1.0
+                    /* coautores */
+                    ELSE
+                        0.5
+                END
+            )
+
         ) AS score_proposicoes
+
     FROM proposicoes_autores pa
-    JOIN proposicoes p ON p.id_proposicao = pa.id_proposicao
+    JOIN proposicoes p
+        ON p.id_proposicao = pa.id_proposicao
+    JOIN autoria a
+        ON a.id_proposicao = pa.id_proposicao
     GROUP BY pa.id_deputado
 ),
+
 presencas AS (
     SELECT
         p.id_dep AS id_deputado,
-        SUM(COALESCE(p.plenario_presencas, 0)) AS total_presencas_plenario,
-        SUM(COALESCE(p.comissoes_presencas, 0)) AS total_presencas_comissoes
+
+        SUM(
+            COALESCE(p.plenario_presencas, 0)
+        ) AS total_presencas_plenario,
+
+        SUM(
+            COALESCE(p.comissoes_presencas, 0)
+        ) AS total_presencas_comissoes
+
     FROM presenca_deputados p
-    -- WHERE p.ano_presenca = :ano
     GROUP BY p.id_dep
 )
+
 SELECT
+
     d.id_deputado,
+
     d.ultimo_status_nome_eleitoral AS deputado,
+
     d.ultimo_status_sigla_partido AS partido,
+
     d.ultimo_status_sigla_uf AS uf,
+
     COALESCE(g.total_gasto, 0) AS total_gasto,
+
     COALESCE(psc.total_proposicoes, 0) AS total_proposicoes,
-    COALESCE(psc.score_proposicoes, 0) AS score_proposicoes,
-    COALESCE(pe.total_presencas_plenario, 0) AS total_presencas_plenario,
-    COALESCE(pe.total_presencas_comissoes, 0) AS total_presencas_comissoes,
-    (
-        (ps.peso_proposicao * COALESCE(psc.score_proposicoes, 0))
-        + (ps.peso_plenario * COALESCE(pe.total_presencas_plenario, 0))
-        + (ps.peso_comissoes * COALESCE(pe.total_presencas_comissoes, 0))
+
+    ROUND(
+        COALESCE(psc.score_proposicoes, 0),
+        2
+    ) AS score_proposicoes,
+
+    COALESCE(pe.total_presencas_plenario, 0)
+        AS total_presencas_plenario,
+
+    COALESCE(pe.total_presencas_comissoes, 0)
+        AS total_presencas_comissoes,
+
+    ROUND(
+        (
+            (ps.peso_proposicao *
+                COALESCE(psc.score_proposicoes, 0))
+
+            +
+
+            (ps.peso_plenario *
+                COALESCE(pe.total_presencas_plenario, 0))
+
+            +
+
+            (ps.peso_comissoes *
+                COALESCE(pe.total_presencas_comissoes, 0))
+        ),
+        2
     ) AS beneficio_score,
+
     ROUND(
         COALESCE(g.total_gasto, 0)
-        / GREATEST(
+        /
+        GREATEST(
             (
-                (ps.peso_proposicao * COALESCE(psc.score_proposicoes, 0))
-                + (ps.peso_plenario * COALESCE(pe.total_presencas_plenario, 0))
-                + (ps.peso_comissoes * COALESCE(pe.total_presencas_comissoes, 0))
+                (ps.peso_proposicao *
+                    COALESCE(psc.score_proposicoes, 0))
+                +
+                (ps.peso_plenario *
+                    COALESCE(pe.total_presencas_plenario, 0))
+                +
+                (ps.peso_comissoes *
+                    COALESCE(pe.total_presencas_comissoes, 0))
             ),
             1
         ),
         2
     ) AS custo_beneficio
+
 FROM deputados d
-LEFT JOIN gastos g ON g.id_deputado = d.id_deputado
-LEFT JOIN proposicoes_score psc ON psc.id_deputado = d.id_deputado
-LEFT JOIN presencas pe ON pe.id_deputado = d.id_deputado
+
+LEFT JOIN gastos g
+    ON g.id_deputado = d.id_deputado
+
+LEFT JOIN proposicoes_score psc
+    ON psc.id_deputado = d.id_deputado
+
+LEFT JOIN presencas pe
+    ON pe.id_deputado = d.id_deputado
+
 CROSS JOIN pesos ps
+
 ORDER BY custo_beneficio ASC;
 
 -- 10) Ordenar partidos conforme alinhamento interno
