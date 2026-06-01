@@ -119,8 +119,8 @@ COMMENT ON COLUMN votacoes_votos.voto IS 'Voto registrado do deputado.';
 ----------------------------------
 
 CREATE TABLE despesas (
-    id_cadastro_deputado INTEGER,
     id_deputado INTEGER,
+    id_deputado_despesas INTEGER,
     nome_parlamentar VARCHAR(255),
     cpf VARCHAR(11),
     sigla_partido VARCHAR(20),
@@ -145,7 +145,7 @@ CREATE TABLE despesas (
 
 -- Índices para performance
 CREATE INDEX idx_despesas_id_deputado ON despesas(id_deputado);
-CREATE INDEX idx_despesas_id_cadastro_deputado ON despesas(id_cadastro_deputado);
+CREATE INDEX idx_despesas_id_deputado_despesas ON despesas(id_deputado_despesas);
 CREATE INDEX idx_despesas_data_emissao ON despesas(data_emissao);
 CREATE INDEX idx_despesas_ano_mes ON despesas(ano, mes);
 CREATE INDEX idx_despesas_partido ON despesas(sigla_partido);
@@ -153,7 +153,7 @@ CREATE INDEX idx_despesas_uf ON despesas(sigla_uf);
 
 -- Comentários
 COMMENT ON TABLE despesas IS 'Tabela de despesas dos deputados (CEAP - Cota para o Exercício da Atividade Parlamentar)';
-COMMENT ON COLUMN despesas.id_cadastro_deputado IS 'Identificador de cadastro do parlamentar na base de despesas (CEAP).';
+COMMENT ON COLUMN despesas.id_deputado_despesas IS 'Identificador de cadastro do parlamentar na base de despesas (CEAP).';
 COMMENT ON COLUMN despesas.id_deputado IS 'Identificador do deputado para cruzar com outras tabelas.';
 COMMENT ON COLUMN despesas.nome_parlamentar IS 'Nome parlamentar do deputado na base de despesas.';
 COMMENT ON COLUMN despesas.sigla_partido IS 'Sigla do partido (na data do gasto).';

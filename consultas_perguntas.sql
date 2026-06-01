@@ -9,7 +9,7 @@ SELECT
     d.ultimo_status_sigla_uf AS uf,
     SUM(COALESCE(des.valor_liquido, 0)) AS total_gasto
 FROM despesas des
-JOIN deputados d ON d.id_deputado = des.id_cadastro_deputado
+JOIN deputados d ON d.id_deputado = des.id_deputado
 -- WHERE des.ano = :ano
 GROUP BY d.id_deputado, d.ultimo_status_nome_eleitoral, d.ultimo_status_sigla_partido, d.ultimo_status_sigla_uf
 ORDER BY total_gasto DESC;
@@ -89,7 +89,7 @@ SELECT
     SUM(COALESCE(des.valor_liquido, 0)) AS total_gasto,
     AVG(COALESCE(des.valor_liquido, 0)) AS gasto_medio
 FROM despesas des
-JOIN deputados d ON d.id_deputado = des.id_cadastro_deputado
+JOIN deputados d ON d.id_deputado = des.id_deputado
 -- WHERE des.ano = :ano
 GROUP BY COALESCE(d.escolaridade_deputado, 'Sem informação')
 ORDER BY total_gasto DESC;
@@ -172,11 +172,11 @@ pesos AS (
 ),
 gastos AS (
     SELECT
-        des.id_cadastro_deputado AS id_deputado,
+        des.id_deputado AS id_deputado,
         SUM(COALESCE(des.valor_liquido, 0)) AS total_gasto
     FROM despesas des
     -- WHERE des.ano = :ano
-    GROUP BY des.id_cadastro_deputado
+    GROUP BY des.id_deputado
 ),
 proposicoes_score AS (
     SELECT
@@ -308,7 +308,7 @@ SELECT
     des.fornecedor_nome,
     SUM(COALESCE(des.valor_liquido, 0)) AS total_gasto
 FROM despesas des
-JOIN deputados d ON d.id_deputado = des.id_cadastro_deputado
+JOIN deputados d ON d.id_deputado = des.id_deputado
 -- WHERE d.id_deputado = :deputado_id
 GROUP BY d.id_deputado, d.ultimo_status_nome_eleitoral, des.fornecedor_nome
 ORDER BY total_gasto DESC;
@@ -320,7 +320,7 @@ SELECT
     des.desc_subcota AS tipo_gasto,
     SUM(COALESCE(des.valor_liquido, 0)) AS total_gasto
 FROM despesas des
-JOIN deputados d ON d.id_deputado = des.id_cadastro_deputado
+JOIN deputados d ON d.id_deputado = des.id_deputado
 -- WHERE d.id_deputado = :deputado_id
 GROUP BY d.id_deputado, d.ultimo_status_nome_eleitoral, des.desc_subcota
 ORDER BY total_gasto DESC;

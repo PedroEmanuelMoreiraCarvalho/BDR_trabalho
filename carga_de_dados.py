@@ -1013,8 +1013,8 @@ def carregar_despesas(caminho_arquivo):
         # Criar a tabela se não existir
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS despesas (
-                id_cadastro_deputado INTEGER,
                 id_deputado INTEGER,
+                id_deputado_despesas INTEGER,
                 nome_parlamentar VARCHAR(255),
                 cpf VARCHAR(11),
                 sigla_partido VARCHAR(20),
@@ -1069,8 +1069,8 @@ def carregar_despesas(caminho_arquivo):
             for linha in leitor_csv:
                 try:
                     # CSV com 22 colunas (incluindo cpf)
-                    id_cadastro_deputado = converter_para_int(linha[0] if len(linha) > 0 else None)
-                    id_deputado = converter_para_int(linha[1] if len(linha) > 1 else None)
+                    id_deputado = converter_para_int(linha[0] if len(linha) > 0 else None)
+                    id_deputado_despesas = converter_para_int(linha[1] if len(linha) > 1 else None)
                     nome_parlamentar = linha[2].strip() if len(linha) > 2 and linha[2] else None
                     cpf = linha[3].strip() if len(linha) > 3 and linha[3] else None
                     
@@ -1114,7 +1114,7 @@ def carregar_despesas(caminho_arquivo):
                     try:
                         cursor.execute("""
                             INSERT INTO despesas (
-                                id_cadastro_deputado, id_deputado, nome_parlamentar, cpf,
+                                id_deputado, id_deputado_despesas, nome_parlamentar, cpf,
                                 sigla_partido, sigla_uf, nu_legislatura, cod_legislatura,
                                 cod_subcota, desc_subcota, cod_especificacao_subcota, 
                                 desc_especificacao_subcota, fornecedor_nome, fornecedor_cnpj_cpf,
@@ -1122,7 +1122,7 @@ def carregar_despesas(caminho_arquivo):
                                 valor_liquido, id_documento, url_documento
                             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         """, (
-                            id_cadastro_deputado, id_deputado, nome_parlamentar, cpf,
+                            id_deputado, id_deputado_despesas, nome_parlamentar, cpf,
                             sigla_partido, sigla_uf, nu_legislatura, cod_legislatura,
                             cod_subcota, desc_subcota, cod_especificacao_subcota,
                             desc_especificacao_subcota, fornecedor_nome, fornecedor_cnpj_cpf,
@@ -2315,23 +2315,23 @@ if __name__ == "__main__":
     
     # arquivo_deputados_csv = r'dados_finais\deputados.csv'
     # carregar_deputados(arquivo_deputados_csv)
-    arquivo_votacao_csv = r'dados_finais\votacoes.csv'  
-    carregar_votacao(arquivo_votacao_csv)
-    arquivo_orientacao_csv = r'dados_finais\votacoes_orientacoes.csv' #ainda contaminados (fk's inexistentes)
-    carregar_votacoes_orientacoes(arquivo_orientacao_csv)
-    arquivo_votos_csv = r'dados_finais\votacoes_votos.csv'
-    carregar_votacoes_votos(arquivo_votos_csv)
+    # arquivo_votacao_csv = r'dados_finais\votacoes.csv'  
+    # carregar_votacao(arquivo_votacao_csv)
+    # arquivo_orientacao_csv = r'dados_finais\votacoes_orientacoes.csv' #ainda contaminados (fk's inexistentes)
+    # carregar_votacoes_orientacoes(arquivo_orientacao_csv)
+    # arquivo_votos_csv = r'dados_finais\votacoes_votos.csv'
+    # carregar_votacoes_votos(arquivo_votos_csv)
     arquivo_despesas_csv = r'dados_finais\despesas.csv' #ainda contaminados
     carregar_despesas(arquivo_despesas_csv)
-    arquivo_eventos_csv = r'dados_finais\eventos.csv' #ainda contaminados
-    carregar_eventos(arquivo_eventos_csv)
-    arquivo_presenca_csv = r'dados_finais\presencas_resumo.csv' #ainda contaminados (fk's inexistentes)
-    carregar_presenca_deputados(arquivo_presenca_csv)
-    arquivo_frentes_csv = r'dados_finais\frentes_deputados.csv' #ainda contaminados (não tem data de inicio nem fim e fk's inexistentes)
-    carregar_frentes_deputados(arquivo_frentes_csv)
-    arquivo_proposicoes_csv = r'dados_finais\proposicoes.csv' #ainda contaminados (fk's inexistentes)
-    carregar_proposicoes(arquivo_proposicoes_csv)
-    arquivo_proposicoes_autores_csv = r'dados_finais\proposicoes_autores.csv' #ainda contaminados (fk's inexistentes)
-    carregar_proposicoes_autores(arquivo_proposicoes_autores_csv)
-    arquivo_proposicoes_temas_csv = r'dados_finais\proposicoes_temas.csv' #ainda contaminados (fk's inexistentes)
-    carregar_proposicoes_temas(arquivo_proposicoes_temas_csv)
+    # arquivo_eventos_csv = r'dados_finais\eventos.csv' #ainda contaminados
+    # carregar_eventos(arquivo_eventos_csv)
+    # arquivo_presenca_csv = r'dados_finais\presencas_resumo.csv' #ainda contaminados (fk's inexistentes)
+    # carregar_presenca_deputados(arquivo_presenca_csv)
+    # arquivo_frentes_csv = r'dados_finais\frentes_deputados.csv' #ainda contaminados (não tem data de inicio nem fim e fk's inexistentes)
+    # carregar_frentes_deputados(arquivo_frentes_csv)
+    # arquivo_proposicoes_csv = r'dados_finais\proposicoes.csv' #ainda contaminados (fk's inexistentes)
+    # carregar_proposicoes(arquivo_proposicoes_csv)
+    # arquivo_proposicoes_autores_csv = r'dados_finais\proposicoes_autores.csv' #ainda contaminados (fk's inexistentes)
+    # carregar_proposicoes_autores(arquivo_proposicoes_autores_csv)
+    # arquivo_proposicoes_temas_csv = r'dados_finais\proposicoes_temas.csv' #ainda contaminados (fk's inexistentes)
+    # carregar_proposicoes_temas(arquivo_proposicoes_temas_csv)
