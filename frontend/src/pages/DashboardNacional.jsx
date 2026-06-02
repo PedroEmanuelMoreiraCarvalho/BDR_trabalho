@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { ChevronDown, ChevronUp, Filter } from 'lucide-react';
 
 const DashboardNacional = () => {
@@ -8,7 +8,9 @@ const DashboardNacional = () => {
   const [filtroUF, setFiltroUF] = useState('Todos');
   const [ordem, setOrdem] = useState('desc');
 
-  // Dados mockados com partido e UF para permitir filtros
+  // ==========================================
+  // MOCK DATA: P1 - Gastos
+  // ==========================================
   const baseData = [
     { name: 'Dep. A', gastos: 45000, partido: 'PL', uf: 'SP' },
     { name: 'Dep. B', gastos: 42000, partido: 'PT', uf: 'MG' },
@@ -40,9 +42,33 @@ const DashboardNacional = () => {
   const top10 = filteredData.slice(0, 10);
   const restantes = filteredData.slice(10);
 
+  // ==========================================
+  // MOCK DATA: P4 - Escolaridade
+  // ==========================================
+  const dataEscolaridade = [
+    { escolaridade: 'Superior Completo', total_deputados: 405 },
+    { escolaridade: 'Pós-Graduação', total_deputados: 52 },
+    { escolaridade: 'Ensino Médio', total_deputados: 45 },
+    { escolaridade: 'Superior Incompleto', total_deputados: 11 },
+  ];
+  const COLORS_PIE = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444'];
+
+  // ==========================================
+  // MOCK DATA: P5 - Fornecedores
+  // ==========================================
+  const dataFornecedores = [
+    { fornecedor_nome: 'TAM LINHAS AEREAS S/A', cnpj: '02.012.862/0001-60', total_contrato: 1250400 },
+    { fornecedor_nome: 'GOL LINHAS AEREAS S.A.', cnpj: '07.575.651/0001-59', total_contrato: 980300 },
+    { fornecedor_nome: 'AZUL LINHAS AEREAS', cnpj: '09.296.295/0001-60', total_contrato: 850100 },
+    { fornecedor_nome: 'TELEFONICA BRASIL S.A.', cnpj: '02.558.157/0001-62', total_contrato: 450000 },
+    { fornecedor_nome: 'CORREIOS', cnpj: '34.028.316/0001-03', total_contrato: 320000 },
+    { fornecedor_nome: 'POSTO DA TORRE LTDA', cnpj: '03.746.488/0001-00', total_contrato: 150000 },
+    { fornecedor_nome: 'LOCALIZA RENT A CAR S/A', cnpj: '16.670.085/0001-55', total_contrato: 120000 },
+  ];
+
   return (
     <div className="dashboard-container">
-      <header className="dashboard-header">
+      <header className="dashboard-header" style={{ marginBottom: '16px' }}>
         <div>
           <h1>Visão Nacional</h1>
           <p className="text-secondary">Visão geral dos dados dos deputados (Custos, Proposições e Alinhamento)</p>
@@ -108,6 +134,7 @@ const DashboardNacional = () => {
         </div>
       </div>
 
+      {/* Grid de Estatísticas */}
       <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '16px' }}>
         <div className="glass-card" style={{ padding: '16px 24px' }}>
           <h3 className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '4px' }}>Total de Gastos (Filtrado)</h3>
@@ -125,7 +152,8 @@ const DashboardNacional = () => {
         </div>
       </div>
 
-      <div className="charts-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+      {/* Grid Principal de Gráficos */}
+      <div className="charts-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '16px' }}>
         <div className="glass-card" style={{ padding: '16px 24px' }}>
           <h2 style={{ marginBottom: '12px', fontSize: '1.125rem' }}>
             {ordem === 'desc' ? 'Maiores' : 'Menores'} Gastos por Deputado
@@ -212,6 +240,82 @@ const DashboardNacional = () => {
           )}
         </div>
       </div>
+
+      {/* Grid Secundário: Escolaridade e Fornecedores */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '16px' }}>
+        
+        {/* Gráfico de Escolaridade */}
+        <div className="glass-card" style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column' }}>
+          <h2 style={{ marginBottom: '12px', fontSize: '1.125rem' }}>Agrupamento por Escolaridade</h2>
+          <div style={{ flex: 1, width: '100%', minHeight: '250px' }}>
+            <ResponsiveContainer>
+              <PieChart>
+                <Pie
+                  data={dataEscolaridade}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="total_deputados"
+                  nameKey="escolaridade"
+                >
+                  {dataEscolaridade.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS_PIE[index % COLORS_PIE.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f9fafb' }}
+                  itemStyle={{ color: '#fff' }}
+                />
+                <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}/>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Tabela de Maiores Fornecedores */}
+        <div className="glass-card" style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column' }}>
+          <h2 style={{ marginBottom: '16px', fontSize: '1.125rem' }}>Maiores Fornecedores (Contratos)</h2>
+          <div style={{ flex: 1, overflowY: 'auto', paddingRight: '8px', maxHeight: '280px' }} className="custom-scrollbar">
+            {dataFornecedores.map((fornecedor, index) => {
+              // Pegamos o valor máximo (que é o primeiro do mock ordenado) para calcular a porcentagem da barra
+              const maxVal = dataFornecedores[0].total_contrato;
+              const percent = (fornecedor.total_contrato / maxVal) * 100;
+              
+              return (
+                <div key={index} style={{ marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingRight: '12px' }}>
+                      <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+                        {fornecedor.fornecedor_nome}
+                      </span>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                        CNPJ: {fornecedor.cnpj}
+                      </span>
+                    </div>
+                    <span className="text-gradient" style={{ fontSize: '0.875rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                      R$ {(fornecedor.total_contrato / 1000).toLocaleString('pt-BR')}k
+                    </span>
+                  </div>
+                  
+                  {/* Barra de Progresso embutida */}
+                  <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ 
+                      width: `${percent}%`, 
+                      height: '100%', 
+                      background: 'var(--accent-primary)',
+                      borderRadius: '4px' 
+                    }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+      </div>
+
     </div>
   );
 };
