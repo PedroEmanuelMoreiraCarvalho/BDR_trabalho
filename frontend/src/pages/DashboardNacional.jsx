@@ -1,39 +1,97 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { ChevronDown, ChevronUp, Filter } from 'lucide-react';
 
 const DashboardNacional = () => {
+  // ==========================================
+  // ESTADOS DA INTERFACE (Filtros e UI)
+  // ==========================================
   const [isExpanded, setIsExpanded] = useState(false);
   const [filtroPartido, setFiltroPartido] = useState('Todos');
   const [filtroUF, setFiltroUF] = useState('Todos');
   const [ordem, setOrdem] = useState('desc');
 
   // ==========================================
-  // MOCK DATA: P1 - Gastos
+  // ESTADOS DOS DADOS (Pronto para a API real)
   // ==========================================
-  const baseData = [
-    { name: 'Dep. A', gastos: 45000, partido: 'PL', uf: 'SP' },
-    { name: 'Dep. B', gastos: 42000, partido: 'PT', uf: 'MG' },
-    { name: 'Dep. C', gastos: 39000, partido: 'PSOL', uf: 'RJ' },
-    { name: 'Dep. D', gastos: 35000, partido: 'UNIÃO', uf: 'SP' },
-    { name: 'Dep. E', gastos: 32000, partido: 'PL', uf: 'SC' },
-    { name: 'Dep. F', gastos: 29000, partido: 'PP', uf: 'PR' },
-    { name: 'Dep. G', gastos: 27000, partido: 'PT', uf: 'BA' },
-    { name: 'Dep. H', gastos: 24000, partido: 'MDB', uf: 'RS' },
-    { name: 'Dep. I', gastos: 21000, partido: 'PSB', uf: 'PE' },
-    { name: 'Dep. J', gastos: 19000, partido: 'PDT', uf: 'CE' },
-    { name: 'Dep. K', gastos: 16000, partido: 'PL', uf: 'RJ' },
-    { name: 'Dep. L', gastos: 14000, partido: 'PT', uf: 'SP' },
-    { name: 'Dep. M', gastos: 12000, partido: 'PSOL', uf: 'MG' },
-    { name: 'Dep. N', gastos: 10500, partido: 'UNIÃO', uf: 'BA' },
-    { name: 'Dep. O', gastos: 9000, partido: 'PP', uf: 'RS' },
-    { name: 'Dep. P', gastos: 7500, partido: 'MDB', uf: 'SC' },
-    { name: 'Dep. Q', gastos: 6000, partido: 'PSB', uf: 'PR' },
-    { name: 'Dep. R', gastos: 4500, partido: 'PDT', uf: 'PE' },
-    { name: 'Dep. S', gastos: 3000, partido: 'PL', uf: 'CE' },
-    { name: 'Dep. T', gastos: 1500, partido: 'PT', uf: 'SP' },
-  ];
+  const [baseData, setBaseData] = useState([]);
+  const [dataEscolaridade, setDataEscolaridade] = useState([]);
+  const [dataFornecedores, setDataFornecedores] = useState([]);
 
+  // ==========================================
+  // SIMULAÇÃO DE CHAMADA À API (useEffect)
+  // ==========================================
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        /* 
+         * FUTURO: Integração com o Backend
+         * Quando o FastAPI estiver rodando, basta substituir os blocos abaixo por:
+         * 
+         * const resGastos = await axios.get('/api/gastos-nacionais');
+         * setBaseData(resGastos.data);
+         * 
+         * const resEscolaridade = await axios.get('/api/escolaridade');
+         * setDataEscolaridade(resEscolaridade.data);
+         * 
+         * const resFornecedores = await axios.get('/api/fornecedores');
+         * setDataFornecedores(resFornecedores.data);
+         */
+
+        // MOCK: Pergunta 1 - Gastos
+        setBaseData([
+          { name: 'Dep. A', gastos: 45000, partido: 'PL', uf: 'SP' },
+          { name: 'Dep. B', gastos: 42000, partido: 'PT', uf: 'MG' },
+          { name: 'Dep. C', gastos: 39000, partido: 'PSOL', uf: 'RJ' },
+          { name: 'Dep. D', gastos: 35000, partido: 'UNIÃO', uf: 'SP' },
+          { name: 'Dep. E', gastos: 32000, partido: 'PL', uf: 'SC' },
+          { name: 'Dep. F', gastos: 29000, partido: 'PP', uf: 'PR' },
+          { name: 'Dep. G', gastos: 27000, partido: 'PT', uf: 'BA' },
+          { name: 'Dep. H', gastos: 24000, partido: 'MDB', uf: 'RS' },
+          { name: 'Dep. I', gastos: 21000, partido: 'PSB', uf: 'PE' },
+          { name: 'Dep. J', gastos: 19000, partido: 'PDT', uf: 'CE' },
+          { name: 'Dep. K', gastos: 16000, partido: 'PL', uf: 'RJ' },
+          { name: 'Dep. L', gastos: 14000, partido: 'PT', uf: 'SP' },
+          { name: 'Dep. M', gastos: 12000, partido: 'PSOL', uf: 'MG' },
+          { name: 'Dep. N', gastos: 10500, partido: 'UNIÃO', uf: 'BA' },
+          { name: 'Dep. O', gastos: 9000, partido: 'PP', uf: 'RS' },
+          { name: 'Dep. P', gastos: 7500, partido: 'MDB', uf: 'SC' },
+          { name: 'Dep. Q', gastos: 6000, partido: 'PSB', uf: 'PR' },
+          { name: 'Dep. R', gastos: 4500, partido: 'PDT', uf: 'PE' },
+          { name: 'Dep. S', gastos: 3000, partido: 'PL', uf: 'CE' },
+          { name: 'Dep. T', gastos: 1500, partido: 'PT', uf: 'SP' },
+        ]);
+
+        // MOCK: Pergunta 4 - Escolaridade
+        setDataEscolaridade([
+          { escolaridade: 'Superior Completo', total_deputados: 405 },
+          { escolaridade: 'Pós-Graduação', total_deputados: 52 },
+          { escolaridade: 'Ensino Médio', total_deputados: 45 },
+          { escolaridade: 'Superior Incompleto', total_deputados: 11 },
+        ]);
+
+        // MOCK: Pergunta 5 - Fornecedores
+        setDataFornecedores([
+          { fornecedor_nome: 'TAM LINHAS AEREAS S/A', cnpj: '02.012.862/0001-60', total_contrato: 1250400 },
+          { fornecedor_nome: 'GOL LINHAS AEREAS S.A.', cnpj: '07.575.651/0001-59', total_contrato: 980300 },
+          { fornecedor_nome: 'AZUL LINHAS AEREAS', cnpj: '09.296.295/0001-60', total_contrato: 850100 },
+          { fornecedor_nome: 'TELEFONICA BRASIL S.A.', cnpj: '02.558.157/0001-62', total_contrato: 450000 },
+          { fornecedor_nome: 'CORREIOS', cnpj: '34.028.316/0001-03', total_contrato: 320000 },
+          { fornecedor_nome: 'POSTO DA TORRE LTDA', cnpj: '03.746.488/0001-00', total_contrato: 150000 },
+          { fornecedor_nome: 'LOCALIZA RENT A CAR S/A', cnpj: '16.670.085/0001-55', total_contrato: 120000 },
+        ]);
+
+      } catch (error) {
+        console.error("Erro ao buscar dados:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // ==========================================
+  // LÓGICA DE FILTRAGEM (Aplicada sobre os dados no State)
+  // ==========================================
   const filteredData = baseData
     .filter(d => filtroPartido === 'Todos' || d.partido === filtroPartido)
     .filter(d => filtroUF === 'Todos' || d.uf === filtroUF)
@@ -41,30 +99,7 @@ const DashboardNacional = () => {
 
   const top10 = filteredData.slice(0, 10);
   const restantes = filteredData.slice(10);
-
-  // ==========================================
-  // MOCK DATA: P4 - Escolaridade
-  // ==========================================
-  const dataEscolaridade = [
-    { escolaridade: 'Superior Completo', total_deputados: 405 },
-    { escolaridade: 'Pós-Graduação', total_deputados: 52 },
-    { escolaridade: 'Ensino Médio', total_deputados: 45 },
-    { escolaridade: 'Superior Incompleto', total_deputados: 11 },
-  ];
   const COLORS_PIE = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444'];
-
-  // ==========================================
-  // MOCK DATA: P5 - Fornecedores
-  // ==========================================
-  const dataFornecedores = [
-    { fornecedor_nome: 'TAM LINHAS AEREAS S/A', cnpj: '02.012.862/0001-60', total_contrato: 1250400 },
-    { fornecedor_nome: 'GOL LINHAS AEREAS S.A.', cnpj: '07.575.651/0001-59', total_contrato: 980300 },
-    { fornecedor_nome: 'AZUL LINHAS AEREAS', cnpj: '09.296.295/0001-60', total_contrato: 850100 },
-    { fornecedor_nome: 'TELEFONICA BRASIL S.A.', cnpj: '02.558.157/0001-62', total_contrato: 450000 },
-    { fornecedor_nome: 'CORREIOS', cnpj: '34.028.316/0001-03', total_contrato: 320000 },
-    { fornecedor_nome: 'POSTO DA TORRE LTDA', cnpj: '03.746.488/0001-00', total_contrato: 150000 },
-    { fornecedor_nome: 'LOCALIZA RENT A CAR S/A', cnpj: '16.670.085/0001-55', total_contrato: 120000 },
-  ];
 
   return (
     <div className="dashboard-container">
@@ -279,8 +314,7 @@ const DashboardNacional = () => {
           <h2 style={{ marginBottom: '16px', fontSize: '1.125rem' }}>Maiores Fornecedores (Contratos)</h2>
           <div style={{ flex: 1, overflowY: 'auto', paddingRight: '8px', maxHeight: '280px' }} className="custom-scrollbar">
             {dataFornecedores.map((fornecedor, index) => {
-              // Pegamos o valor máximo (que é o primeiro do mock ordenado) para calcular a porcentagem da barra
-              const maxVal = dataFornecedores[0].total_contrato;
+              const maxVal = dataFornecedores[0]?.total_contrato || 1;
               const percent = (fornecedor.total_contrato / maxVal) * 100;
               
               return (
