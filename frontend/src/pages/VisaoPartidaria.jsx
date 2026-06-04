@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import DashboardAdapter from '../adapters/DashboardAdapter';
 
 const VisaoPartidaria = () => {
   // ==========================================
@@ -9,6 +10,7 @@ const VisaoPartidaria = () => {
   const [dataComparacao, setDataComparacao] = useState([]);
   const [comparacaoMetric, setComparacaoMetric] = useState('gastos'); // 'frequencia', 'proposicoes', 'gastos'
   const [partidoSelecionado, setPartidoSelecionado] = useState('PL');
+  const [dataNuvem, setDataNuvem] = useState([]);
 
   // ==========================================
   // SIMULAÇÃO DE CHAMADA À API (useEffect)
@@ -24,34 +26,11 @@ const VisaoPartidaria = () => {
          * setDataAlinhamento(res.data);
          */
 
-        // MOCK: Pergunta 10 - Alinhamento Interno
-        setDataAlinhamento([
-          { partido: 'PT', total_considerado: 2500, total_alinhado: 2450, perc_alinhamento: 98.0 },
-          { partido: 'PL', total_considerado: 3200, total_alinhado: 3040, perc_alinhamento: 95.0 },
-          { partido: 'PSOL', total_considerado: 600, total_alinhado: 564, perc_alinhamento: 94.0 },
-          { partido: 'PCdoB', total_considerado: 300, total_alinhado: 279, perc_alinhamento: 93.0 },
-          { partido: 'NOVO', total_considerado: 150, total_alinhado: 135, perc_alinhamento: 90.0 },
-          { partido: 'PP', total_considerado: 2100, total_alinhado: 1785, perc_alinhamento: 85.0 },
-          { partido: 'MDB', total_considerado: 1800, total_alinhado: 1440, perc_alinhamento: 80.0 },
-          { partido: 'UNIÃO', total_considerado: 2400, total_alinhado: 1800, perc_alinhamento: 75.0 },
-          { partido: 'PSDB', total_considerado: 1100, total_alinhado: 770, perc_alinhamento: 70.0 },
-          { partido: 'PDT', total_considerado: 950, total_alinhado: 617, perc_alinhamento: 65.0 },
-          { partido: 'REPUBLICANOS', total_considerado: 1600, total_alinhado: 960, perc_alinhamento: 60.0 }
-        ]);
+        const alinhamento = await DashboardAdapter.getVisaoPartidariaAlinhamento();
+        setDataAlinhamento(alinhamento);
 
-        // MOCK: Comparação entre Partidos
-        setDataComparacao([
-          { partido: 'PL', frequencia: 91.5, proposicoes: 4500, gastos: 125000000 },
-          { partido: 'PT', frequencia: 93.2, proposicoes: 4100, gastos: 118000000 },
-          { partido: 'UNIÃO', frequencia: 88.5, proposicoes: 3200, gastos: 95000000 },
-          { partido: 'PP', frequencia: 89.0, proposicoes: 2800, gastos: 82000000 },
-          { partido: 'MDB', frequencia: 87.5, proposicoes: 2500, gastos: 75000000 },
-          { partido: 'PSD', frequencia: 86.0, proposicoes: 2100, gastos: 70000000 },
-          { partido: 'REPUBLICANOS', frequencia: 88.2, proposicoes: 1900, gastos: 65000000 },
-          { partido: 'PSB', frequencia: 90.1, proposicoes: 1500, gastos: 45000000 },
-          { partido: 'PSOL', frequencia: 95.5, proposicoes: 1800, gastos: 35000000 },
-          { partido: 'PDT', frequencia: 89.8, proposicoes: 1200, gastos: 30000000 },
-        ]);
+        const comparacao = await DashboardAdapter.getVisaoPartidariaComparacao();
+        setDataComparacao(comparacao);
 
       } catch (error) {
         console.error("Erro ao buscar dados do alinhamento:", error);
@@ -116,24 +95,20 @@ const VisaoPartidaria = () => {
     return null;
   };
 
-  const MOCK_NUVEM_PARTIDOS = {
-    'PT': [
-      { text: 'Trabalhadores', value: 90 }, { text: 'Bolsa Família', value: 85 }, { text: 'Ensino Público', value: 70 }, { text: 'Saúde da Família', value: 60 }, { text: 'Agricultura Familiar', value: 50 }, { text: 'Minorias', value: 45 }, { text: 'Cotas', value: 30 }
-    ],
-    'PL': [
-      { text: 'Segurança Pública', value: 95 }, { text: 'Isenção Fiscal', value: 80 }, { text: 'Agronegócio', value: 75 }, { text: 'Liberdade Econômica', value: 60 }, { text: 'Armas de Fogo', value: 50 }, { text: 'Redução de Impostos', value: 40 }, { text: 'Defesa Nacional', value: 35 }
-    ],
-    'PSOL': [
-      { text: 'Direitos Humanos', value: 95 }, { text: 'Demarcação de Terras', value: 85 }, { text: 'LGBTQIAP+', value: 80 }, { text: 'Escolas Públicas', value: 70 }, { text: 'Moradia Popular', value: 65 }, { text: 'Estatização', value: 55 }
-    ]
-  };
-
-  const fallbackNuvem = [
-    { text: 'Orçamento Público', value: 70 }, { text: 'Reforma Administrativa', value: 60 }, { text: 'Teto de Gastos', value: 50 }, { text: 'Obras Públicas', value: 45 }, { text: 'Emendas', value: 30 }
-  ];
+  useEffect(() => {
+    const fetchNuvem = async () => {
+      try {
+        const nuvem = await DashboardAdapter.getVisaoPartidariaNuvem(partidoSelecionado);
+        setDataNuvem(nuvem);
+      } catch (error) {
+        console.error("Erro ao buscar dados da nuvem de palavras:", error);
+      }
+    };
+    fetchNuvem();
+  }, [partidoSelecionado]);
 
   const renderWordCloud = () => {
-    const palavras = MOCK_NUVEM_PARTIDOS[partidoSelecionado] || fallbackNuvem;
+    const palavras = dataNuvem;
     if (palavras.length === 0) return null;
     const maxVal = Math.max(...palavras.map(w => w.value));
     const minVal = Math.min(...palavras.map(w => w.value));

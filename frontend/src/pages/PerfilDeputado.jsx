@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, User as UserIcon, MapPin, BookOpen, CheckCircle, XCircle, MinusCircle, Filter, Calendar, Mail, Phone, Building, Info } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
+import DashboardAdapter from '../adapters/DashboardAdapter';
 
 const PerfilDeputado = () => {
   const { id } = useParams();
@@ -28,73 +29,20 @@ const PerfilDeputado = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // MOCK: Perfil Básico
-        setPerfil({
-          id_deputado: id,
-          nome: id === '12345' ? 'Nikolas Ferreira' : 'Guilherme Boulos',
-          partido: id === '12345' ? 'PL' : 'PSOL',
-          uf: id === '12345' ? 'MG' : 'SP',
-          escolaridade: 'Superior Completo',
-          data_nascimento: id === '12345' ? '30/05/1996' : '19/06/1982',
-          email: id === '12345' ? 'dep.nikolasferreira@camara.leg.br' : 'dep.guilhermeboulos@camara.leg.br',
-          telefone: '(61) 3215-5000',
-          endereco: 'Câmara dos Deputados, Anexo IV, Gabinete 123 - Brasília, DF',
-          custo_beneficio: id === '12345' ? 8.5 : 7.2
-        });
+        const perfilData = await DashboardAdapter.getPerfilDeputado(id);
+        setPerfil(perfilData);
 
-        // MOCK: Pergunta 2 - Eixo de Atuação (Nuvem de Palavras)
-        setNuvemPalavras([
-          { text: 'Educação Básica', value: 85 },
-          { text: 'Piso Salarial', value: 75 },
-          { text: 'Isenção Fiscal', value: 65 },
-          { text: 'Saúde Pública', value: 60 },
-          { text: 'Segurança', value: 55 },
-          { text: 'Reforma Tributária', value: 45 },
-          { text: 'Agricultura Familiar', value: 40 },
-          { text: 'Armas de Fogo', value: 35 },
-          { text: 'Tecnologia', value: 30 },
-          { text: 'Violência Doméstica', value: 25 },
-          { text: 'Energia Solar', value: 20 },
-          { text: 'Meio Ambiente', value: 15 },
-        ]);
+        const nuvemData = await DashboardAdapter.getPerfilNuvemPalavras(id);
+        setNuvemPalavras(nuvemData);
 
-        // MOCK: Pergunta 13 - Com o que o deputado mais gasta?
-        setGastosTipo([
-          { tipo_gasto: 'Divulgação Parlamentar', total_gasto: 154000 },
-          { tipo_gasto: 'Passagens Aéreas', total_gasto: 86000 },
-          { tipo_gasto: 'Manutenção de Escritório', total_gasto: 45000 },
-          { tipo_gasto: 'Combustíveis', total_gasto: 25000 },
-          { tipo_gasto: 'Consultorias', total_gasto: 18000 },
-          { tipo_gasto: 'Alimentação', total_gasto: 12500 },
-          { tipo_gasto: 'Serviços de Táxi e Pedágio', total_gasto: 5200 },
-          { tipo_gasto: 'Assinatura de Publicações', total_gasto: 1800 },
-        ]);
+        const gastosData = await DashboardAdapter.getPerfilGastosTipo(id);
+        setGastosTipo(gastosData);
 
-        // MOCK: Pergunta 12 - Principais Fornecedores
-        setFornecedores([
-          { fornecedor_nome: 'POSTO DA TORRE LTDA', total_gasto: 45000 },
-          { fornecedor_nome: 'TAM LINHAS AEREAS S/A.', total_gasto: 32000 },
-          { fornecedor_nome: 'GOL LINHAS AEREAS S.A.', total_gasto: 28000 },
-          { fornecedor_nome: 'GRAFICA E EDITORA ALFA', total_gasto: 15000 },
-          { fornecedor_nome: 'LOCALIZA RENT A CAR', total_gasto: 12000 },
-        ]);
+        const fornecedoresData = await DashboardAdapter.getPerfilFornecedores(id);
+        setFornecedores(fornecedoresData);
 
-        // MOCK: Pergunta 3 - Votações Recentes
-        setVotacoes([
-          { id: 1, data_votacao: '12/05/2024', descricao: 'PL 1234/2024 - Nova lei de diretrizes educacionais', voto: 'Sim', tema: 'Educação', ementa: 'Altera as diretrizes e bases da educação nacional para incluir novas tecnologias no currículo básico do ensino fundamental.' },
-          { id: 2, data_votacao: '20/04/2024', descricao: 'PEC 45/2023 - Reforma Tributária', voto: 'Não', tema: 'Tributário', ementa: 'Altera o Sistema Tributário Nacional para simplificar impostos sobre o consumo e criar o Imposto sobre Bens e Serviços (IBS).' },
-          { id: 3, data_votacao: '15/03/2024', descricao: 'MPV 1150/2023 - Alterações no código florestal', voto: 'Abstenção', tema: 'Meio Ambiente', ementa: 'Dispõe sobre prazos e regras do Programa de Regularização Ambiental (PRA) e alterações em áreas de preservação permanente.' },
-          { id: 4, data_votacao: '28/02/2024', descricao: 'PL 567/2024 - Piso salarial dos professores', voto: 'Sim', tema: 'Educação', ementa: 'Estabelece o novo piso salarial profissional nacional para os profissionais do magistério público da educação básica.' },
-          { id: 5, data_votacao: '10/01/2024', descricao: 'PLP 99/2023 - Arcabouço Fiscal', voto: 'Sim', tema: 'Economia', ementa: 'Institui o regime fiscal sustentável para garantir a estabilidade macroeconômica e criar condições para o desenvolvimento socioeconômico.' },
-          { id: 6, data_votacao: '05/12/2023', descricao: 'PL 890/2023 - Incentivo à Energia Solar', voto: 'Sim', tema: 'Meio Ambiente', ementa: 'Cria subsídios para a instalação de painéis solares em residências de baixa renda.' },
-          { id: 7, data_votacao: '20/11/2023', descricao: 'PEC 10/2023 - Imunidade Parlamentar', voto: 'Não', tema: 'Direito', ementa: 'Altera as regras sobre prisão em flagrante e foro privilegiado para deputados.' },
-          { id: 8, data_votacao: '15/10/2023', descricao: 'MPV 1000/2023 - Auxílio Emergencial', voto: 'Sim', tema: 'Economia', ementa: 'Prorroga o auxílio emergencial para famílias em situação de vulnerabilidade.' },
-          { id: 9, data_votacao: '02/09/2023', descricao: 'PL 345/2023 - Privatização dos Correios', voto: 'Não', tema: 'Economia', ementa: 'Autoriza a desestatização da Empresa Brasileira de Correios e Telégrafos (ECT).' },
-          { id: 10, data_votacao: '10/08/2023', descricao: 'PL 111/2023 - Câmeras Policiais', voto: 'Sim', tema: 'Segurança', ementa: 'Obriga o uso de câmeras corporais por policiais em serviço.' },
-          { id: 11, data_votacao: '05/07/2023', descricao: 'PEC 20/2023 - Fundo Partidário', voto: 'Abstenção', tema: 'Política', ementa: 'Aumenta o repasse de verbas públicas para o Fundo Eleitoral.' },
-          { id: 12, data_votacao: '18/06/2023', descricao: 'PL 789/2023 - Demarcação de Terras', voto: 'Não', tema: 'Meio Ambiente', ementa: 'Estabelece o marco temporal para a demarcação de terras indígenas no Brasil.' },
-        ]);
-
+        const votacoesData = await DashboardAdapter.getPerfilVotacoes(id);
+        setVotacoes(votacoesData);
       } catch (error) {
         console.error("Erro ao buscar dados do perfil:", error);
       }

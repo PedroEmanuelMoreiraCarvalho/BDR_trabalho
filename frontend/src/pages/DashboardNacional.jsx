@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { ChevronDown, ChevronUp, Filter } from 'lucide-react';
+import DashboardAdapter from '../adapters/DashboardAdapter';
 
 const DashboardNacional = () => {
   // ==========================================
@@ -38,48 +39,15 @@ const DashboardNacional = () => {
          * setDataFornecedores(resFornecedores.data);
          */
 
-        // MOCK: Pergunta 1 - Gastos
-        setBaseData([
-          { name: 'Dep. A', gastos: 45000, partido: 'PL', uf: 'SP' },
-          { name: 'Dep. B', gastos: 42000, partido: 'PT', uf: 'MG' },
-          { name: 'Dep. C', gastos: 39000, partido: 'PSOL', uf: 'RJ' },
-          { name: 'Dep. D', gastos: 35000, partido: 'UNIÃO', uf: 'SP' },
-          { name: 'Dep. E', gastos: 32000, partido: 'PL', uf: 'SC' },
-          { name: 'Dep. F', gastos: 29000, partido: 'PP', uf: 'PR' },
-          { name: 'Dep. G', gastos: 27000, partido: 'PT', uf: 'BA' },
-          { name: 'Dep. H', gastos: 24000, partido: 'MDB', uf: 'RS' },
-          { name: 'Dep. I', gastos: 21000, partido: 'PSB', uf: 'PE' },
-          { name: 'Dep. J', gastos: 19000, partido: 'PDT', uf: 'CE' },
-          { name: 'Dep. K', gastos: 16000, partido: 'PL', uf: 'RJ' },
-          { name: 'Dep. L', gastos: 14000, partido: 'PT', uf: 'SP' },
-          { name: 'Dep. M', gastos: 12000, partido: 'PSOL', uf: 'MG' },
-          { name: 'Dep. N', gastos: 10500, partido: 'UNIÃO', uf: 'BA' },
-          { name: 'Dep. O', gastos: 9000, partido: 'PP', uf: 'RS' },
-          { name: 'Dep. P', gastos: 7500, partido: 'MDB', uf: 'SC' },
-          { name: 'Dep. Q', gastos: 6000, partido: 'PSB', uf: 'PR' },
-          { name: 'Dep. R', gastos: 4500, partido: 'PDT', uf: 'PE' },
-          { name: 'Dep. S', gastos: 3000, partido: 'PL', uf: 'CE' },
-          { name: 'Dep. T', gastos: 1500, partido: 'PT', uf: 'SP' },
-        ]);
+        // MOCK via Adapter
+        const gastos = await DashboardAdapter.getVisaoGeralGastos();
+        setBaseData(gastos);
 
-        // MOCK: Pergunta 4 - Escolaridade
-        setDataEscolaridade([
-          { escolaridade: 'Superior Completo', total_deputados: 405 },
-          { escolaridade: 'Pós-Graduação', total_deputados: 52 },
-          { escolaridade: 'Ensino Médio', total_deputados: 45 },
-          { escolaridade: 'Superior Incompleto', total_deputados: 11 },
-        ]);
+        const escolaridade = await DashboardAdapter.getVisaoGeralEscolaridade();
+        setDataEscolaridade(escolaridade);
 
-        // MOCK: Pergunta 5 - Fornecedores
-        setDataFornecedores([
-          { fornecedor_nome: 'TAM LINHAS AEREAS S/A', cnpj: '02.012.862/0001-60', total_contrato: 1250400 },
-          { fornecedor_nome: 'GOL LINHAS AEREAS S.A.', cnpj: '07.575.651/0001-59', total_contrato: 980300 },
-          { fornecedor_nome: 'AZUL LINHAS AEREAS', cnpj: '09.296.295/0001-60', total_contrato: 850100 },
-          { fornecedor_nome: 'TELEFONICA BRASIL S.A.', cnpj: '02.558.157/0001-62', total_contrato: 450000 },
-          { fornecedor_nome: 'CORREIOS', cnpj: '34.028.316/0001-03', total_contrato: 320000 },
-          { fornecedor_nome: 'POSTO DA TORRE LTDA', cnpj: '03.746.488/0001-00', total_contrato: 150000 },
-          { fornecedor_nome: 'LOCALIZA RENT A CAR S/A', cnpj: '16.670.085/0001-55', total_contrato: 120000 },
-        ]);
+        const fornecedores = await DashboardAdapter.getVisaoGeralFornecedores();
+        setDataFornecedores(fornecedores);
 
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
