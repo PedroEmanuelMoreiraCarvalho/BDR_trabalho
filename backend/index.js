@@ -104,6 +104,17 @@ async function startServer() {
       }
     });
 
+    // 8.1. Rota GET para Nuvem de Palavras do Partido
+    app.get('/api/partidos/:sigla/nuvem', async (req, res) => {
+      try {
+        const dados = await dbAdapter.getVisaoPartidariaNuvem(req.params.sigla);
+        res.json(dados);
+      } catch (error) {
+        console.error('Erro na rota /api/partidos/:sigla/nuvem:', error);
+        res.status(500).json({ erro: 'Falha ao buscar nuvem de palavras do partido' });
+      }
+    });
+
     // 9. Rota GET para o Perfil do Deputado
     app.get('/api/deputados/:id', async (req, res) => {
       try {

@@ -64,6 +64,14 @@
         path: '/api/comparacao-partidaria',
       },
       {
+        nome: 'Nuvem de Palavras do Partido',
+        metodo: 'GET',
+        path: '/api/partidos/{sigla}/nuvem',
+        campos: [
+          { key: 'sigla', placeholder: 'Sigla do partido (ex: PT)', default: 'PT' },
+        ]
+      },
+      {
         nome: 'Ranking Geral',
         metodo: 'POST',
         path: '/api/ranking',
@@ -157,13 +165,15 @@
       const vals = {};
       inputs.forEach(inp => { vals[inp.dataset.key] = inp.value; });
 
-      // Monta a URL substituindo {id}
+      // Monta a URL substituindo {id} e {sigla}
       let url = BASE + rota.path;
       if (vals.id) url = url.replace('{id}', vals.id);
+      if (vals.sigla) url = url.replace('{sigla}', vals.sigla);
 
-      // Monta o body para POST (sem o campo "id" que foi para a URL)
+      // Monta o body para POST (sem os campos que foram para a URL)
       const body = { ...vals };
       delete body.id;
+      delete body.sigla;
 
       pre.style.display = 'block';
       pre.className = '';

@@ -274,6 +274,34 @@ class DatabaseAdapter {
     }
   }
 
+  // Retorna as palavras para a nuvem de palavras de um partido
+  async getVisaoPartidariaNuvem(partido) {
+    try {
+      const query = `
+        SELECT 
+          pt.tema AS text,
+          COUNT(*) AS value
+        FROM proposicoes_autores pa
+        JOIN proposicoes p ON pa.id_proposicao = p.id_proposicao
+        JOIN proposicoes_temas pt ON p.id_proposicao = pt.id_proposicao
+        JOIN deputados d ON pa.id_deputado = d.id_deputado
+        WHERE d.ultimo_status_sigla_partido = $1
+          AND pt.tema IS NOT NULL AND pt.tema != ''
+        GROUP BY pt.tema
+        ORDER BY value DESC
+        LIMIT 30
+      `;
+      const result = await this.client.query(query, [partido]);
+      return result.rows.map(row => ({
+        text: row.text,
+        value: parseInt(row.value)
+      }));
+    } catch (error) {
+      console.error('Erro na query getVisaoPartidariaNuvem:', error);
+      throw error;
+    }
+  }
+
   // ==========================================
   // Aba "Perfil do Deputado"
   // ==========================================
