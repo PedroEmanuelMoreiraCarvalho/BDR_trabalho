@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Testador de API - Backend</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: monospace; background: #0f1117; color: #e0e0e0; padding: 24px; }
+    h1 { color: #7c3aed; margin-bottom: 24px; font-size: 1.4rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+    .card { background: #1a1d2e; border: 1px solid #2a2d3e; border-radius: 10px; padding: 16px; }
+    .card h3 { color: #a78bfa; font-size: 0.85rem; margin-bottom: 4px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-bottom: 10px; }
+    .get  { background: #064e3b; color: #34d399; }
+    .post { background: #1e3a5f; color: #60a5fa; }
+    .url { font-size: 0.78rem; color: #94a3b8; margin-bottom: 10px; word-break: break-all; }
+    .fields { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+    .fields input { background: #0f1117; border: 1px solid #374151; border-radius: 6px; padding: 5px 8px; color: #e0e0e0; font-size: 0.8rem; font-family: monospace; }
+    .fields input::placeholder { color: #4b5563; }
+    button { width: 100%; padding: 8px; border: none; border-radius: 6px; background: #7c3aed; color: white; font-weight: bold; cursor: pointer; font-size: 0.82rem; transition: background 0.2s; }
+    button:hover { background: #6d28d9; }
+    button:disabled { background: #374151; cursor: not-allowed; }
+    pre { background: #0f1117; border: 1px solid #2a2d3e; border-radius: 6px; padding: 10px; margin-top: 10px; font-size: 0.72rem; max-height: 220px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; color: #86efac; display: none; }
+    .error { color: #f87171; }
+  </style>
+</head>
+<body>
+  <h1>🔌 Testador de API — Backend (localhost:3000)</h1>
+  <div class="grid" id="grid"></div>
+
+  <script>
+    const BASE = 'http://localhost:3000';
+
+    // Definição de todas as rotas
+    const rotas = [
+      {
+        nome: 'Teste de Conexão',
+        metodo: 'GET',
+        path: '/api/teste-conexao',
+      },
+      {
+        nome: 'Gastos Gerais (Top 10)',
+        metodo: 'GET',
+        path: '/api/gastos',
+      },
+      {
+        nome: 'Escolaridade',
+        metodo: 'GET',
+        path: '/api/escolaridade',
+      },
+      {
+        nome: 'Fornecedores Gerais (Top 10)',
+        metodo: 'GET',
+        path: '/api/fornecedores',
+      },
+      {
+        nome: 'Alinhamento Partidário',
+        metodo: 'GET',
+        path: '/api/alinhamento-partidario',
+      },
+      {
+        nome: 'Comparação Partidária',
+        metodo: 'GET',
+        path: '/api/comparacao-partidaria',
+      },
+      {
+        nome: 'Ranking Geral',
+        metodo: 'POST',
+        path: '/api/ranking',
+        campos: [
+          { key: 'pagina',        placeholder: 'pagina (ex: 1)',               default: '1' },
+          { key: 'itensPorPagina',placeholder: 'itensPorPagina (ex: 5)',        default: '5' },
+          { key: 'filtroPartido', placeholder: 'filtroPartido (ex: PT ou Todos)',default: 'Todos' },
+          { key: 'filtroUF',      placeholder: 'filtroUF (ex: SP ou Todos)',     default: 'Todos' },
+          { key: 'metrica',       placeholder: 'metrica (eficiencia ou gastos)', default: 'gastos' },
+          { key: 'ordem',         placeholder: 'ordem (asc ou desc)',            default: 'desc' },
+        ]
+      },
+      {
+        nome: 'Perfil do Deputado',
+        metodo: 'GET',
+        path: '/api/deputados/{id}',
+        campos: [
+          { key: 'id', placeholder: 'ID do deputado (ex: 204554)', default: '204554' },
+        ]
+      },
+      {
+        nome: 'Nuvem de Palavras do Deputado',
+        metodo: 'GET',
+        path: '/api/deputados/{id}/nuvem',
+        campos: [
+          { key: 'id', placeholder: 'ID do deputado', default: '204554' },
+        ]
+      },
+      {
+        nome: 'Gastos por Tipo do Deputado',
+        metodo: 'GET',
+        path: '/api/deputados/{id}/gastos-tipo',
+        campos: [
+          { key: 'id', placeholder: 'ID do deputado', default: '204554' },
+        ]
+      },
+      {
+        nome: 'Fornecedores do Deputado',
+        metodo: 'GET',
+        path: '/api/deputados/{id}/fornecedores',
+        campos: [
+          { key: 'id', placeholder: 'ID do deputado', default: '204554' },
+        ]
+      },
+      {
+        nome: 'Votações do Deputado',
+        metodo: 'POST',
+        path: '/api/deputados/{id}/votacoes',
+        campos: [
+          { key: 'id',            placeholder: 'ID do deputado',               default: '204554' },
+          { key: 'pagina',        placeholder: 'pagina (ex: 1)',                default: '1' },
+          { key: 'itensPorPagina',placeholder: 'itensPorPagina (ex: 5)',        default: '5' },
+          { key: 'filtroTema',    placeholder: 'filtroTema (ex: Todos)',         default: 'Todos' },
+          { key: 'busca',         placeholder: 'busca (texto livre)',            default: '' },
+        ]
+      },
+    ];
+
+    const grid = document.getElementById('grid');
+
+    rotas.forEach((rota, i) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const urlId = `url-${i}`;
+      const preId = `pre-${i}`;
+
+      card.innerHTML = `
+        <h3>${rota.nome}</h3>
+        <span class="badge ${rota.metodo.toLowerCase()}">${rota.metodo}</span>
+        <div class="url" id="${urlId}">${BASE}${rota.path}</div>
+        <div class="fields" id="fields-${i}">
+          ${(rota.campos || []).map(c => `
+            <input data-key="${c.key}" placeholder="${c.placeholder}" value="${c.default}" />
+          `).join('')}
+        </div>
+        <button onclick="chamar(${i})">▶ Executar</button>
+        <pre id="${preId}"></pre>
+      `;
+
+      grid.appendChild(card);
+    });
+
+    async function chamar(i) {
+      const rota = rotas[i];
+      const pre = document.getElementById(`pre-${i}`);
+      const btn = document.querySelector(`#grid .card:nth-child(${i+1}) button`);
+      const inputs = document.querySelectorAll(`#fields-${i} input`);
+
+      // Lê os valores dos inputs
+      const vals = {};
+      inputs.forEach(inp => { vals[inp.dataset.key] = inp.value; });
+
+      // Monta a URL substituindo {id}
+      let url = BASE + rota.path;
+      if (vals.id) url = url.replace('{id}', vals.id);
+
+      // Monta o body para POST (sem o campo "id" que foi para a URL)
+      const body = { ...vals };
+      delete body.id;
+
+      pre.style.display = 'block';
+      pre.className = '';
+      pre.textContent = '⏳ Buscando...';
+      btn.disabled = true;
+
+      try {
+        const opts = { method: rota.metodo };
+        if (rota.metodo === 'POST') {
+          opts.headers = { 'Content-Type': 'application/json' };
+          opts.body = JSON.stringify(body);
+        }
+
+        const resp = await fetch(url, opts);
+        const json = await resp.json();
+
+        pre.textContent = JSON.stringify(json, null, 2);
+        if (!resp.ok) pre.className = 'error';
+      } catch (err) {
+        pre.className = 'error';
+        pre.textContent = '❌ Erro: ' + err.message + '\n\nVerifique se o servidor backend está rodando em localhost:3000';
+      } finally {
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
