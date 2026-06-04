@@ -177,14 +177,6 @@ const DashboardNacional = () => {
             R$ {(filteredData.reduce((acc, curr) => acc + curr.gastos, 0) / 1000).toFixed(1)}k
           </p>
         </div>
-        <div className="glass-card" style={{ padding: '16px 24px' }}>
-          <h3 className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '4px' }}>Proposições Aprovadas</h3>
-          <p className="text-gradient" style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>1,284</p>
-        </div>
-        <div className="glass-card" style={{ padding: '16px 24px' }}>
-          <h3 className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '4px' }}>Média de Presença</h3>
-          <p className="text-gradient" style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>87.5%</p>
-        </div>
       </div>
 
       {/* Grid Principal de Gráficos */}
@@ -280,32 +272,69 @@ const DashboardNacional = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '16px' }}>
 
         {/* Gráfico de Escolaridade */}
-        <div className="glass-card" style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column' }}>
-          <h2 style={{ marginBottom: '12px', fontSize: '1.125rem' }}>Agrupamento por Escolaridade</h2>
-          <div style={{ flex: 1, width: '100%', minHeight: '250px' }}>
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie
-                  data={dataEscolaridade}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="total_deputados"
-                  nameKey="escolaridade"
-                >
-                  {dataEscolaridade.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS_PIE[index % COLORS_PIE.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f9fafb' }}
-                  itemStyle={{ color: '#fff' }}
-                />
-                <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }} />
-              </PieChart>
-            </ResponsiveContainer>
+        <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Agrupamento por Escolaridade</h2>
+          <div style={{ marginBottom: '24px' }}>
+            <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+              Total de Deputados
+            </span>
+            <span className="text-gradient" style={{ fontSize: '1.5rem', fontWeight: 700 }}>
+              {dataEscolaridade.reduce((acc, curr) => acc + curr.total_deputados, 0)}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', flex: 1, minHeight: '250px', alignItems: 'center', gap: '24px' }}>
+            {/* Gráfico na Esquerda */}
+            <div style={{ flex: '1 1 180px', height: '250px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={dataEscolaridade}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="total_deputados"
+                    nameKey="escolaridade"
+                  >
+                    {dataEscolaridade.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS_PIE[index % COLORS_PIE.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f9fafb' }}
+                    itemStyle={{ color: '#fff' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Legenda na Direita */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: '1 1 180px', overflowY: 'auto', maxHeight: '250px', paddingRight: '8px' }} className="custom-scrollbar">
+              {dataEscolaridade.map((item, index) => {
+                const total = dataEscolaridade.reduce((acc, curr) => acc + curr.total_deputados, 0);
+                const percent = total ? ((item.total_deputados / total) * 100).toFixed(1) : 0;
+                return (
+                  <div key={index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                      <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: COLORS_PIE[index % COLORS_PIE.length], flexShrink: 0 }} />
+                      <span style={{ fontSize: '0.875rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.escolaridade}>
+                        {item.escolaridade}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 }}>
+                      <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {item.total_deputados}
+                      </span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                        {percent}%
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 

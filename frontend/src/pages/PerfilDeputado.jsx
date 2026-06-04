@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, User as UserIcon, MapPin, BookOpen, CheckCircle, XCircle, MinusCircle, Filter } from 'lucide-react';
+import { ArrowLeft, User as UserIcon, MapPin, BookOpen, CheckCircle, XCircle, MinusCircle, Filter, Calendar, Mail, Phone, Building, Info } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const PerfilDeputado = () => {
@@ -14,9 +14,13 @@ const PerfilDeputado = () => {
   const [gastosTipo, setGastosTipo] = useState([]);
   const [fornecedores, setFornecedores] = useState([]);
   const [votacoes, setVotacoes] = useState([]);
-  
+
   // Estado para filtro de votações
   const [filtroTema, setFiltroTema] = useState('Todos');
+  const [buscaVotacao, setBuscaVotacao] = useState('');
+  const [ementaExpandida, setEmentaExpandida] = useState(null);
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const itensPorPagina = 5;
 
   // ==========================================
   // SIMULAÇÃO DE CHAMADA À API (useEffect)
@@ -24,44 +28,34 @@ const PerfilDeputado = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        /*
-         * FUTURO: Integração com o Backend
-         * const resPerfil = await axios.get(`/api/deputados/${id}`);
-         * setPerfil(resPerfil.data);
-         * 
-         * const resNuvem = await axios.get(`/api/deputados/${id}/temas`);
-         * setNuvemPalavras(resNuvem.data);
-         * 
-         * const resGastos = await axios.get(`/api/deputados/${id}/gastos-por-tipo`);
-         * setGastosTipo(resGastos.data);
-         * 
-         * const resForn = await axios.get(`/api/deputados/${id}/fornecedores`);
-         * setFornecedores(resForn.data);
-         * 
-         * const resVotos = await axios.get(`/api/deputados/${id}/votacoes`);
-         * setVotacoes(resVotos.data);
-         */
-
         // MOCK: Perfil Básico
         setPerfil({
           id_deputado: id,
           nome: id === '12345' ? 'Nikolas Ferreira' : 'Guilherme Boulos',
           partido: id === '12345' ? 'PL' : 'PSOL',
           uf: id === '12345' ? 'MG' : 'SP',
-          escolaridade: 'Superior Completo'
+          escolaridade: 'Superior Completo',
+          data_nascimento: id === '12345' ? '30/05/1996' : '19/06/1982',
+          email: id === '12345' ? 'dep.nikolasferreira@camara.leg.br' : 'dep.guilhermeboulos@camara.leg.br',
+          telefone: '(61) 3215-5000',
+          endereco: 'Câmara dos Deputados, Anexo IV, Gabinete 123 - Brasília, DF',
+          custo_beneficio: id === '12345' ? 8.5 : 7.2
         });
 
         // MOCK: Pergunta 2 - Eixo de Atuação (Nuvem de Palavras)
         setNuvemPalavras([
-          { text: 'Educação', value: 85 },
-          { text: 'Saúde Pública', value: 65 },
-          { text: 'Economia', value: 45 },
-          { text: 'Segurança', value: 40 },
-          { text: 'Tributário', value: 35 },
-          { text: 'Meio Ambiente', value: 25 },
-          { text: 'Infraestrutura', value: 20 },
-          { text: 'Tecnologia', value: 15 },
-          { text: 'Cultura', value: 10 },
+          { text: 'Educação Básica', value: 85 },
+          { text: 'Piso Salarial', value: 75 },
+          { text: 'Isenção Fiscal', value: 65 },
+          { text: 'Saúde Pública', value: 60 },
+          { text: 'Segurança', value: 55 },
+          { text: 'Reforma Tributária', value: 45 },
+          { text: 'Agricultura Familiar', value: 40 },
+          { text: 'Armas de Fogo', value: 35 },
+          { text: 'Tecnologia', value: 30 },
+          { text: 'Violência Doméstica', value: 25 },
+          { text: 'Energia Solar', value: 20 },
+          { text: 'Meio Ambiente', value: 15 },
         ]);
 
         // MOCK: Pergunta 13 - Com o que o deputado mais gasta?
@@ -71,6 +65,9 @@ const PerfilDeputado = () => {
           { tipo_gasto: 'Manutenção de Escritório', total_gasto: 45000 },
           { tipo_gasto: 'Combustíveis', total_gasto: 25000 },
           { tipo_gasto: 'Consultorias', total_gasto: 18000 },
+          { tipo_gasto: 'Alimentação', total_gasto: 12500 },
+          { tipo_gasto: 'Serviços de Táxi e Pedágio', total_gasto: 5200 },
+          { tipo_gasto: 'Assinatura de Publicações', total_gasto: 1800 },
         ]);
 
         // MOCK: Pergunta 12 - Principais Fornecedores
@@ -84,11 +81,18 @@ const PerfilDeputado = () => {
 
         // MOCK: Pergunta 3 - Votações Recentes
         setVotacoes([
-          { id: 1, data_votacao: '12/05/2024', descricao: 'PL 1234/2024 - Nova lei de diretrizes educacionais', voto: 'Sim', tema: 'Educação' },
-          { id: 2, data_votacao: '20/04/2024', descricao: 'PEC 45/2023 - Reforma Tributária', voto: 'Não', tema: 'Tributário' },
-          { id: 3, data_votacao: '15/03/2024', descricao: 'MPV 1150/2023 - Alterações no código florestal', voto: 'Abstenção', tema: 'Meio Ambiente' },
-          { id: 4, data_votacao: '28/02/2024', descricao: 'PL 567/2024 - Piso salarial dos professores', voto: 'Sim', tema: 'Educação' },
-          { id: 5, data_votacao: '10/01/2024', descricao: 'PLP 99/2023 - Arcabouço Fiscal', voto: 'Sim', tema: 'Economia' },
+          { id: 1, data_votacao: '12/05/2024', descricao: 'PL 1234/2024 - Nova lei de diretrizes educacionais', voto: 'Sim', tema: 'Educação', ementa: 'Altera as diretrizes e bases da educação nacional para incluir novas tecnologias no currículo básico do ensino fundamental.' },
+          { id: 2, data_votacao: '20/04/2024', descricao: 'PEC 45/2023 - Reforma Tributária', voto: 'Não', tema: 'Tributário', ementa: 'Altera o Sistema Tributário Nacional para simplificar impostos sobre o consumo e criar o Imposto sobre Bens e Serviços (IBS).' },
+          { id: 3, data_votacao: '15/03/2024', descricao: 'MPV 1150/2023 - Alterações no código florestal', voto: 'Abstenção', tema: 'Meio Ambiente', ementa: 'Dispõe sobre prazos e regras do Programa de Regularização Ambiental (PRA) e alterações em áreas de preservação permanente.' },
+          { id: 4, data_votacao: '28/02/2024', descricao: 'PL 567/2024 - Piso salarial dos professores', voto: 'Sim', tema: 'Educação', ementa: 'Estabelece o novo piso salarial profissional nacional para os profissionais do magistério público da educação básica.' },
+          { id: 5, data_votacao: '10/01/2024', descricao: 'PLP 99/2023 - Arcabouço Fiscal', voto: 'Sim', tema: 'Economia', ementa: 'Institui o regime fiscal sustentável para garantir a estabilidade macroeconômica e criar condições para o desenvolvimento socioeconômico.' },
+          { id: 6, data_votacao: '05/12/2023', descricao: 'PL 890/2023 - Incentivo à Energia Solar', voto: 'Sim', tema: 'Meio Ambiente', ementa: 'Cria subsídios para a instalação de painéis solares em residências de baixa renda.' },
+          { id: 7, data_votacao: '20/11/2023', descricao: 'PEC 10/2023 - Imunidade Parlamentar', voto: 'Não', tema: 'Direito', ementa: 'Altera as regras sobre prisão em flagrante e foro privilegiado para deputados.' },
+          { id: 8, data_votacao: '15/10/2023', descricao: 'MPV 1000/2023 - Auxílio Emergencial', voto: 'Sim', tema: 'Economia', ementa: 'Prorroga o auxílio emergencial para famílias em situação de vulnerabilidade.' },
+          { id: 9, data_votacao: '02/09/2023', descricao: 'PL 345/2023 - Privatização dos Correios', voto: 'Não', tema: 'Economia', ementa: 'Autoriza a desestatização da Empresa Brasileira de Correios e Telégrafos (ECT).' },
+          { id: 10, data_votacao: '10/08/2023', descricao: 'PL 111/2023 - Câmeras Policiais', voto: 'Sim', tema: 'Segurança', ementa: 'Obriga o uso de câmeras corporais por policiais em serviço.' },
+          { id: 11, data_votacao: '05/07/2023', descricao: 'PEC 20/2023 - Fundo Partidário', voto: 'Abstenção', tema: 'Política', ementa: 'Aumenta o repasse de verbas públicas para o Fundo Eleitoral.' },
+          { id: 12, data_votacao: '18/06/2023', descricao: 'PL 789/2023 - Demarcação de Terras', voto: 'Não', tema: 'Meio Ambiente', ementa: 'Estabelece o marco temporal para a demarcação de terras indígenas no Brasil.' },
         ]);
 
       } catch (error) {
@@ -105,17 +109,17 @@ const PerfilDeputado = () => {
     if (nuvemPalavras.length === 0) return null;
     const maxVal = Math.max(...nuvemPalavras.map(w => w.value));
     const minVal = Math.min(...nuvemPalavras.map(w => w.value));
-    
+
     return (
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center', alignItems: 'center', padding: '16px' }}>
         {nuvemPalavras.map((word, i) => {
           const size = 14 + ((word.value - minVal) / (maxVal - minVal)) * 36;
           return (
-            <span 
-              key={i} 
-              style={{ 
-                fontSize: `${size}px`, 
-                fontWeight: 'bold', 
+            <span
+              key={i}
+              style={{
+                fontSize: `${size}px`,
+                fontWeight: 'bold',
                 color: COLORS_PIE[i % COLORS_PIE.length],
                 transition: 'transform 0.2s',
                 cursor: 'default',
@@ -133,13 +137,43 @@ const PerfilDeputado = () => {
     );
   };
 
-  // Filtragem da Timeline
-  const votacoesFiltradas = useMemo(() => {
-    if (filtroTema === 'Todos') return votacoes;
-    return votacoes.filter(v => v.tema === filtroTema);
-  }, [votacoes, filtroTema]);
+  // Processamento de Gastos (Top 5 + Outros e Total)
+  const { gastosProcessados, valorTotalGastos } = useMemo(() => {
+    if (!gastosTipo || gastosTipo.length === 0) return { gastosProcessados: [], valorTotalGastos: 0 };
+    
+    const total = gastosTipo.reduce((acc, curr) => acc + curr.total_gasto, 0);
+    const sorted = [...gastosTipo].sort((a, b) => b.total_gasto - a.total_gasto);
+    
+    let processed = [];
+    if (sorted.length > 5) {
+      processed = sorted.slice(0, 5);
+      const outrosTotal = sorted.slice(5).reduce((acc, curr) => acc + curr.total_gasto, 0);
+      processed.push({ tipo_gasto: 'Outros', total_gasto: outrosTotal });
+    } else {
+      processed = sorted;
+    }
+
+    return { gastosProcessados: processed, valorTotalGastos: total };
+  }, [gastosTipo]);
 
   const temasDisponiveis = ['Todos', ...new Set(votacoes.map(v => v.tema))];
+  const votacoesFiltradas = votacoes.filter(v => {
+    const matchesTema = filtroTema === 'Todos' || v.tema === filtroTema;
+    const searchLower = buscaVotacao.toLowerCase();
+    const matchesBusca = v.descricao.toLowerCase().includes(searchLower) || (v.ementa && v.ementa.toLowerCase().includes(searchLower));
+    return matchesTema && matchesBusca;
+  });
+
+  // Reseta para página 1 sempre que os filtros mudarem
+  useEffect(() => {
+    setPaginaAtual(1);
+  }, [filtroTema, buscaVotacao]);
+
+  // Paginação
+  const totalPaginas = Math.ceil(votacoesFiltradas.length / itensPorPagina);
+  const indexUltimoItem = paginaAtual * itensPorPagina;
+  const indexPrimeiroItem = indexUltimoItem - itensPorPagina;
+  const votacoesPaginadas = votacoesFiltradas.slice(indexPrimeiroItem, indexUltimoItem);
 
   const getVotoIcon = (voto) => {
     if (voto === 'Sim') return <CheckCircle size={18} style={{ color: '#10b981' }} />;
@@ -157,39 +191,75 @@ const PerfilDeputado = () => {
         <span>Voltar para Busca</span>
       </Link>
 
-      <div className="glass-card" style={{ padding: '32px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '24px' }}>
-        <div style={{ width: '96px', height: '96px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <UserIcon size={48} style={{ color: 'var(--text-secondary)' }} />
+      <div className="glass-card" style={{ padding: '40px 32px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '32px' }}>
+        <div style={{ width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+          {perfil.foto ? (
+            <img src={perfil.foto} alt={`Foto de ${perfil.nome}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <UserIcon size={64} style={{ color: 'var(--text-secondary)' }} />
+          )}
         </div>
-        <div>
-          <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>{perfil.nome}</h1>
-          <div style={{ display: 'flex', gap: '16px', color: 'var(--text-secondary)' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ background: 'rgba(59, 130, 246, 0.2)', color: 'var(--accent-primary)', padding: '2px 8px', borderRadius: '12px', fontWeight: '500' }}>
-                {perfil.partido}
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+            <h1 style={{ fontSize: '2.5rem', margin: 0, lineHeight: 1.2 }}>{perfil.nome}</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              {perfil.custo_beneficio && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '6px 16px', borderRadius: '16px', fontWeight: '600' }}>
+                  <span>Índice de Eficiência: {perfil.custo_beneficio}/10</span>
+                  <div title="O Índice de Eficiência (Custo-Benefício) divide o Benefício Gerado (Proposições ponderadas por tipo, aprovação e autoria + Presenças em plenário e comissões) pelo Custo do mandato (gastos). O resultado é ajustado por um Fator de Atividade para evitar distorções." style={{ display: 'flex', alignItems: 'center', cursor: 'help' }}>
+                    <Info size={16} />
+                  </div>
+                </div>
+              )}
+              <span style={{ background: 'rgba(255,255,255,0.1)', padding: '6px 12px', borderRadius: '16px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                ID: {perfil.id_deputado}
               </span>
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <MapPin size={16} /> {perfil.uf}
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <BookOpen size={16} /> {perfil.escolaridade}
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto', opacity: 0.6 }}>
-              ID: {perfil.id_deputado}
-            </span>
+            </div>
+          </div>
+          
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '32px', color: 'var(--text-secondary)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ background: 'rgba(59, 130, 246, 0.2)', color: 'var(--accent-primary)', padding: '4px 12px', borderRadius: '12px', fontWeight: '600', fontSize: '1rem' }}>
+                  {perfil.partido}
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '1rem' }}>
+                  <MapPin size={18} /> {perfil.uf}
+                </span>
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Building size={16} /> {perfil.endereco}
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <BookOpen size={16} /> {perfil.escolaridade}
+              </span>
+            </div>
+            
+            <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)', display: 'block' }}></div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Calendar size={16} /> Nascido em {perfil.data_nascimento}
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Mail size={16} /> {perfil.email}
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Phone size={16} /> {perfil.telefone}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Grid Principal (Palavras e Gastos) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px', marginBottom: '24px' }}>
-        
+
         {/* Pergunta 2: Eixo de Atuação */}
         <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Eixo de Atuação (Temas)</h2>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Eixo de Atuação (Palavras-chave)</h2>
           <p className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '16px' }}>
-            Baseado na quantidade de proposições que o deputado foi autor.
+            Baseado nos temas e palavras-chave extraídas das ementas das proposições de autoria do deputado.
           </p>
           <div style={{ flex: 1, minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ width: '100%', height: '100%' }}>
@@ -200,42 +270,75 @@ const PerfilDeputado = () => {
 
         {/* Pergunta 13: Com o que o deputado mais gasta? */}
         <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Distribuição de Gastos</h2>
-          <p className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '16px' }}>
-            Valor líquido total gasto pelo parlamentar dividido por categoria.
-          </p>
-          <div style={{ flex: 1, minHeight: '300px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={gastosTipo}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={70}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="total_gasto"
-                  nameKey="tipo_gasto"
-                >
-                  {gastosTipo.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS_PIE[index % COLORS_PIE.length]} />
-                  ))}
-                </Pie>
-                <RechartsTooltip 
-                  formatter={(value) => [`R$ ${value.toLocaleString('pt-BR')}`, 'Gasto']}
-                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f9fafb' }}
-                  itemStyle={{ color: '#fff' }}
-                />
-                <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}/>
-              </PieChart>
-            </ResponsiveContainer>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Com o que o deputado mais gasta?</h2>
+          <div style={{ marginBottom: '24px' }}>
+            <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+              Valor líquido total gasto
+            </span>
+            <span className="text-gradient" style={{ fontSize: '1.5rem', fontWeight: 700 }}>
+              R$ {valorTotalGastos.toLocaleString('pt-BR')}
+            </span>
+          </div>
+          
+          <div style={{ display: 'flex', flexWrap: 'wrap', flex: 1, minHeight: '250px', alignItems: 'center', gap: '24px' }}>
+            {/* Gráfico na Esquerda */}
+            <div style={{ flex: '1 1 200px', height: '250px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={gastosProcessados}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={110}
+                    paddingAngle={5}
+                    dataKey="total_gasto"
+                    nameKey="tipo_gasto"
+                  >
+                    {gastosProcessados.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS_PIE[index % COLORS_PIE.length]} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip
+                    formatter={(value) => [`R$ ${value.toLocaleString('pt-BR')}`, 'Gasto']}
+                    contentStyle={{ backgroundColor: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f9fafb' }}
+                    itemStyle={{ color: '#fff' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Legenda na Direita */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: '1 1 200px', overflowY: 'auto', maxHeight: '250px', paddingRight: '8px' }} className="custom-scrollbar">
+              {gastosProcessados.map((item, index) => {
+                const percent = valorTotalGastos ? ((item.total_gasto / valorTotalGastos) * 100).toFixed(1) : 0;
+                return (
+                  <div key={index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                      <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: COLORS_PIE[index % COLORS_PIE.length], flexShrink: 0 }} />
+                      <span style={{ fontSize: '0.875rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.tipo_gasto}>
+                        {item.tipo_gasto}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 }}>
+                      <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        R$ {item.total_gasto.toLocaleString('pt-BR')}
+                      </span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                        {percent}%
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Grid Secundário (Fornecedores e Votações) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
-        
+
         {/* Pergunta 12: Principais Fornecedores */}
         <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
           <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Principais Fornecedores</h2>
@@ -267,28 +370,37 @@ const PerfilDeputado = () => {
 
         {/* Pergunta 3: Timeline de Votações */}
         <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
             <div>
-              <h2 style={{ fontSize: '1.25rem', marginBottom: '4px' }}>Histórico de Votações</h2>
+              <h2 style={{ fontSize: '1.25rem', marginBottom: '4px' }}>Como o deputado vota?</h2>
               <p className="text-secondary" style={{ fontSize: '0.875rem' }}>Como o deputado votou recentemente.</p>
             </div>
-            {/* Filtro por Tema */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: '8px' }}>
-              <Filter size={14} style={{ color: 'var(--text-secondary)' }} />
-              <select 
-                value={filtroTema} 
-                onChange={e => setFiltroTema(e.target.value)}
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontSize: '0.875rem', cursor: 'pointer' }}
-              >
-                {temasDisponiveis.map(tema => (
-                  <option key={tema} value={tema} style={{ background: 'var(--bg-surface)' }}>{tema}</option>
-                ))}
-              </select>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <input 
+                type="text" 
+                placeholder="Buscar (ex: PL 1234)" 
+                value={buscaVotacao} 
+                onChange={e => setBuscaVotacao(e.target.value)} 
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '6px 12px', borderRadius: '8px', outline: 'none', fontSize: '0.875rem', minWidth: '150px' }}
+              />
+              {/* Filtro por Tema */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: '8px' }}>
+                <Filter size={14} style={{ color: 'var(--text-secondary)' }} />
+                <select
+                  value={filtroTema}
+                  onChange={e => setFiltroTema(e.target.value)}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontSize: '0.875rem', cursor: 'pointer' }}
+                >
+                  {temasDisponiveis.map(tema => (
+                    <option key={tema} value={tema} style={{ background: 'var(--bg-surface)' }}>{tema}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', maxHeight: '350px', paddingRight: '8px' }} className="custom-scrollbar">
-            {votacoesFiltradas.length > 0 ? votacoesFiltradas.map(voto => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', maxHeight: '400px', paddingRight: '8px' }} className="custom-scrollbar">
+            {votacoesPaginadas.length > 0 ? votacoesPaginadas.map(voto => (
               <div key={voto.id} style={{ display: 'flex', gap: '16px', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', minWidth: '60px' }}>
                   {getVotoIcon(voto.voto)}
@@ -297,19 +409,60 @@ const PerfilDeputado = () => {
                   </span>
                 </div>
                 <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '16px', flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', alignItems: 'center' }}>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{voto.data_votacao}</span>
-                    <span style={{ fontSize: '0.65rem', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px' }}>{voto.tema}</span>
+                    <span style={{ fontSize: '0.75rem', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-primary)', padding: '2px 8px', borderRadius: '12px' }}>
+                      {voto.tema}
+                    </span>
                   </div>
-                  <p style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: 1.4 }}>
-                    {voto.descricao}
-                  </p>
+                  <p style={{ margin: 0, fontWeight: 500, color: 'var(--text-primary)', fontSize: '0.9rem' }}>{voto.descricao}</p>
+                  
+                  {voto.ementa && (
+                    <div style={{ marginTop: '8px' }}>
+                      <button 
+                        onClick={() => setEmentaExpandida(ementaExpandida === voto.id ? null : voto.id)}
+                        style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: '0.8rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+                      >
+                        {ementaExpandida === voto.id ? 'Ocultar Ementa' : 'Ver Ementa'}
+                      </button>
+                      {ementaExpandida === voto.id && (
+                        <div style={{ marginTop: '8px', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', fontSize: '0.85rem', color: 'var(--text-secondary)', fontStyle: 'italic', borderLeft: '3px solid var(--accent-primary)', lineHeight: 1.4 }}>
+                          {voto.ementa}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )) : (
-              <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px' }}>Nenhuma votação encontrada para o tema selecionado.</div>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Nenhuma votação encontrada com os filtros selecionados.</p>
             )}
           </div>
+
+          {/* Paginação */}
+          {totalPaginas > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              <button 
+                onClick={() => setPaginaAtual(prev => Math.max(prev - 1, 1))}
+                disabled={paginaAtual === 1}
+                style={{ padding: '6px 12px', borderRadius: '6px', background: paginaAtual === 1 ? 'rgba(255,255,255,0.05)' : 'var(--accent-primary)', color: paginaAtual === 1 ? 'var(--text-secondary)' : '#fff', border: 'none', cursor: paginaAtual === 1 ? 'not-allowed' : 'pointer', fontSize: '0.875rem' }}
+              >
+                Anterior
+              </button>
+              
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                Página {paginaAtual} de {totalPaginas}
+              </span>
+              
+              <button 
+                onClick={() => setPaginaAtual(prev => Math.min(prev + 1, totalPaginas))}
+                disabled={paginaAtual === totalPaginas}
+                style={{ padding: '6px 12px', borderRadius: '6px', background: paginaAtual === totalPaginas ? 'rgba(255,255,255,0.05)' : 'var(--accent-primary)', color: paginaAtual === totalPaginas ? 'var(--text-secondary)' : '#fff', border: 'none', cursor: paginaAtual === totalPaginas ? 'not-allowed' : 'pointer', fontSize: '0.875rem' }}
+              >
+                Próxima
+              </button>
+            </div>
+          )}
         </div>
 
       </div>
