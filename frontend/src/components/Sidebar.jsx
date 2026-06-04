@@ -8,7 +8,6 @@ const Sidebar = () => {
     { path: '/', icon: <LayoutDashboard size={20} />, label: 'Visão Geral' },
     { path: '/partidos', icon: <Users size={20} />, label: 'Visão Partidária' },
     { path: '/parlamentares', icon: <Search size={20} />, label: 'Deputados' },
-    { path: '/analise', icon: <BarChart3 size={20} />, label: 'Análises Avançadas' },
   ];
 
   return (

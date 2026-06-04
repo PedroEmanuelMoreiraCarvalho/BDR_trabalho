@@ -57,10 +57,11 @@ class DashboardAdapter {
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve([
-          { escolaridade: 'Superior Completo', total_deputados: 405 },
-          { escolaridade: 'Pós-Graduação', total_deputados: 52 },
-          { escolaridade: 'Ensino Médio', total_deputados: 45 },
-          { escolaridade: 'Superior Incompleto', total_deputados: 11 },
+          { escolaridade: 'Superior Completo', total_deputados: 405, gastos: 4500000, fidelidade: 85.0, proposicoes: 1200 },
+          { escolaridade: 'Pós-Graduação', total_deputados: 52, gastos: 1200000, fidelidade: 88.0, proposicoes: 600 },
+          { escolaridade: 'Ensino Médio', total_deputados: 45, gastos: 2500000, fidelidade: 80.0, proposicoes: 450 },
+          { escolaridade: 'Superior Incompleto', total_deputados: 11, gastos: 800000, fidelidade: 75.0, proposicoes: 150 },
+          { escolaridade: 'Sem informação', total_deputados: 0, gastos: 300000, fidelidade: 60.0, proposicoes: 50 },
         ]);
       }, 300);
     });

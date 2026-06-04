@@ -26,6 +26,8 @@ const DashboardNacional = () => {
   // Estado para travar a renderização do gráfico até o dado chegar
   const [appliedMetrica, setAppliedMetrica] = useState(metrica);
 
+  const [metricaEscolaridade, setMetricaEscolaridade] = useState('gastos'); // 'gastos', 'fidelidade', 'proposicoes'
+
   // ==========================================
   // SIMULAÇÃO DE CHAMADA À API (useEffect)
   // ==========================================
@@ -67,6 +69,33 @@ const DashboardNacional = () => {
   const totalPaginas = Math.ceil(totalItens / itensPorPagina);
 
   const COLORS_PIE = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444'];
+
+  const CustomBarTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      let valLabel = '';
+      let valFormat = payload[0].value;
+      
+      if (metricaEscolaridade === 'gastos') {
+        valLabel = 'Gasto Total';
+        valFormat = `R$ ${(payload[0].value / 1000).toLocaleString('pt-BR')}k`;
+      } else if (metricaEscolaridade === 'fidelidade') {
+        valLabel = 'Alinhamento Médio';
+        valFormat = `${payload[0].value}%`;
+      } else {
+        valLabel = 'Total Proposições';
+        valFormat = payload[0].value;
+      }
+
+      return (
+        <div style={{ backgroundColor: '#1f2937', padding: '12px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f9fafb' }}>
+          <p style={{ fontWeight: 'bold', marginBottom: '8px', color: 'var(--text-primary)' }}>{data.escolaridade}</p>
+          <p style={{ fontSize: '0.875rem', color: 'var(--accent-primary)' }}>{valLabel}: {valFormat}</p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="dashboard-container">
@@ -289,10 +318,10 @@ const DashboardNacional = () => {
         </div>
       </div>
 
-      {/* Grid Secundário: Escolaridade e Fornecedores */}
+      {/* Grid Secundário: Agrupamento de Escolaridade e Fornecedores */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '16px' }}>
 
-        {/* Gráfico de Escolaridade */}
+        {/* Gráfico de Agrupamento por Escolaridade (PieChart) */}
         <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
           <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Agrupamento por Escolaridade</h2>
           <div style={{ marginBottom: '24px' }}>
@@ -300,12 +329,11 @@ const DashboardNacional = () => {
               Total de Deputados
             </span>
             <span className="text-gradient" style={{ fontSize: '1.5rem', fontWeight: 700 }}>
-              {dataEscolaridade.reduce((acc, curr) => acc + curr.total_deputados, 0)}
+              {dataEscolaridade.reduce((acc, curr) => acc + (curr.total_deputados || 0), 0)}
             </span>
           </div>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', flex: 1, minHeight: '250px', alignItems: 'center', gap: '24px' }}>
-            {/* Gráfico na Esquerda */}
             <div style={{ flex: '1 1 180px', height: '250px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -331,10 +359,9 @@ const DashboardNacional = () => {
               </ResponsiveContainer>
             </div>
 
-            {/* Legenda na Direita */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: '1 1 180px', overflowY: 'auto', maxHeight: '250px', paddingRight: '8px' }} className="custom-scrollbar">
               {dataEscolaridade.map((item, index) => {
-                const total = dataEscolaridade.reduce((acc, curr) => acc + curr.total_deputados, 0);
+                const total = dataEscolaridade.reduce((acc, curr) => acc + (curr.total_deputados || 0), 0);
                 const percent = total ? ((item.total_deputados / total) * 100).toFixed(1) : 0;
                 return (
                   <div key={index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
@@ -398,6 +425,58 @@ const DashboardNacional = () => {
           </div>
         </div>
 
+      </div>
+
+      {/* Grid Terciário: Correlação por Escolaridade */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginTop: '16px' }}>
+        <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+            <div>
+              <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Correlação por Escolaridade</h2>
+              <p className="text-secondary" style={{ fontSize: '0.875rem' }}>
+                Impacto do nível de instrução nas métricas (Média por deputado em cada nível).
+              </p>
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: '8px' }}>
+              <Filter size={16} style={{ color: 'var(--text-secondary)' }} />
+              <select 
+                value={metricaEscolaridade} 
+                onChange={e => setMetricaEscolaridade(e.target.value)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontSize: '0.875rem', cursor: 'pointer' }}
+              >
+                <option value="gastos" style={{ background: 'var(--bg-surface)' }}>vs. Gastos Totais</option>
+                <option value="fidelidade" style={{ background: 'var(--bg-surface)' }}>vs. Fidelidade</option>
+                <option value="proposicoes" style={{ background: 'var(--bg-surface)' }}>vs. Proposições</option>
+              </select>
+            </div>
+          </div>
+          
+          <div style={{ width: '100%', flex: 1, minHeight: '300px' }}>
+            <ResponsiveContainer>
+              <BarChart 
+                data={dataEscolaridade} 
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <XAxis dataKey="escolaridade" stroke="#9ca3af" tick={{fill: '#9ca3af', fontSize: 12}} axisLine={false} tickLine={false} />
+                <YAxis 
+                  stroke="#9ca3af" 
+                  tick={{fill: '#9ca3af', fontSize: 12}} 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tickFormatter={(val) => metricaEscolaridade === 'gastos' ? `${val / 1000}k` : val}
+                />
+                <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} content={<CustomBarTooltip />} />
+                <Bar dataKey={metricaEscolaridade} radius={[4, 4, 0, 0]}>
+                  {dataEscolaridade.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS_PIE[index % COLORS_PIE.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
 
     </div>
