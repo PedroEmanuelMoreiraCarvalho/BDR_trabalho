@@ -105,7 +105,7 @@ const DashboardNacional = () => {
     <div className="dashboard-container">
       <header className="dashboard-header" style={{ marginBottom: '16px' }}>
         <div>
-          <h1>Visão Nacional</h1>
+          <h1>Visão Geral</h1>
           <p className="text-secondary">Visão geral dos dados dos deputados (Custos, Proposições e Alinhamento)</p>
         </div>
       </header>
@@ -116,11 +116,11 @@ const DashboardNacional = () => {
           <Filter size={20} />
           <span style={{ fontWeight: 500 }}>Filtros:</span>
         </div>
-        
+
         <div style={{ flex: 1, minWidth: '150px' }}>
           <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Partido</label>
-          <select 
-            value={filtroPartido} 
+          <select
+            value={filtroPartido}
             onChange={(e) => setFiltroPartido(e.target.value)}
             style={{ width: '100%', padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
           >
@@ -135,11 +135,11 @@ const DashboardNacional = () => {
             <option value="PDT" style={{ background: 'var(--bg-surface)' }}>PDT</option>
           </select>
         </div>
-        
+
         <div style={{ flex: 1, minWidth: '150px' }}>
           <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Estado (UF)</label>
-          <select 
-            value={filtroUF} 
+          <select
+            value={filtroUF}
             onChange={(e) => setFiltroUF(e.target.value)}
             style={{ width: '100%', padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
           >
@@ -158,8 +158,8 @@ const DashboardNacional = () => {
 
         <div style={{ flex: 1, minWidth: '150px' }}>
           <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Ordenar por Gastos</label>
-          <select 
-            value={ordem} 
+          <select
+            value={ordem}
             onChange={(e) => setOrdem(e.target.value)}
             style={{ width: '100%', padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
           >
@@ -193,18 +193,18 @@ const DashboardNacional = () => {
           <h2 style={{ marginBottom: '12px', fontSize: '1.125rem' }}>
             {ordem === 'desc' ? 'Maiores' : 'Menores'} Gastos por Deputado
           </h2>
-          
+
           <div style={{ width: '100%', height: 220 }}>
             {top10.length > 0 ? (
               <ResponsiveContainer>
                 <BarChart data={top10} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
-                  <XAxis dataKey="name" stroke="#9ca3af" tick={{fill: '#9ca3af', fontSize: 12}} axisLine={false} tickLine={false} />
-                  <YAxis stroke="#9ca3af" tick={{fill: '#9ca3af', fontSize: 12}} axisLine={false} tickLine={false} />
-                  <Tooltip 
+                  <XAxis dataKey="name" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <Tooltip
                     contentStyle={{ backgroundColor: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f9fafb' }}
                     itemStyle={{ color: '#3b82f6' }}
-                    cursor={{fill: 'rgba(255,255,255,0.05)'}}
+                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                   />
                   <Bar dataKey="gastos" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -218,11 +218,11 @@ const DashboardNacional = () => {
 
           {restantes.length > 0 && (
             <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-              <div 
-                style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center', 
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                   cursor: 'pointer',
                   padding: '4px 0',
                   userSelect: 'none'
@@ -238,21 +238,21 @@ const DashboardNacional = () => {
               </div>
 
               {isExpanded && (
-                <div style={{ 
-                  marginTop: '12px', 
-                  display: 'flex', 
-                  flexDirection: 'column', 
+                <div style={{
+                  marginTop: '12px',
+                  display: 'flex',
+                  flexDirection: 'column',
                   gap: '6px',
                   maxHeight: '250px',
                   overflowY: 'auto',
                   paddingRight: '8px'
                 }}>
                   {restantes.map((dep, index) => (
-                    <div key={index} style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      padding: '12px', 
-                      background: 'rgba(255,255,255,0.02)', 
+                    <div key={index} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      padding: '12px',
+                      background: 'rgba(255,255,255,0.02)',
                       border: '1px solid rgba(255,255,255,0.05)',
                       borderRadius: '8px',
                       transition: 'background 0.2s',
@@ -278,7 +278,7 @@ const DashboardNacional = () => {
 
       {/* Grid Secundário: Escolaridade e Fornecedores */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '16px' }}>
-        
+
         {/* Gráfico de Escolaridade */}
         <div className="glass-card" style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column' }}>
           <h2 style={{ marginBottom: '12px', fontSize: '1.125rem' }}>Agrupamento por Escolaridade</h2>
@@ -299,11 +299,11 @@ const DashboardNacional = () => {
                     <Cell key={`cell-${index}`} fill={COLORS_PIE[index % COLORS_PIE.length]} />
                   ))}
                 </Pie>
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ backgroundColor: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f9fafb' }}
                   itemStyle={{ color: '#fff' }}
                 />
-                <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}/>
+                <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -316,7 +316,7 @@ const DashboardNacional = () => {
             {dataFornecedores.map((fornecedor, index) => {
               const maxVal = dataFornecedores[0]?.total_contrato || 1;
               const percent = (fornecedor.total_contrato / maxVal) * 100;
-              
+
               return (
                 <div key={index} style={{ marginBottom: '16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
@@ -332,14 +332,14 @@ const DashboardNacional = () => {
                       R$ {(fornecedor.total_contrato / 1000).toLocaleString('pt-BR')}k
                     </span>
                   </div>
-                  
+
                   {/* Barra de Progresso embutida */}
                   <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ 
-                      width: `${percent}%`, 
-                      height: '100%', 
+                    <div style={{
+                      width: `${percent}%`,
+                      height: '100%',
                       background: 'var(--accent-primary)',
-                      borderRadius: '4px' 
+                      borderRadius: '4px'
                     }} />
                   </div>
                 </div>

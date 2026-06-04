@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, User as UserIcon, MapPin, BookOpen } from 'lucide-react';
+import { ArrowLeft, User as UserIcon, MapPin, BookOpen, CheckCircle, XCircle, MinusCircle, Filter } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const PerfilDeputado = () => {
@@ -12,6 +12,11 @@ const PerfilDeputado = () => {
   const [perfil, setPerfil] = useState(null);
   const [nuvemPalavras, setNuvemPalavras] = useState([]);
   const [gastosTipo, setGastosTipo] = useState([]);
+  const [fornecedores, setFornecedores] = useState([]);
+  const [votacoes, setVotacoes] = useState([]);
+  
+  // Estado para filtro de votações
+  const [filtroTema, setFiltroTema] = useState('Todos');
 
   // ==========================================
   // SIMULAÇÃO DE CHAMADA À API (useEffect)
@@ -29,19 +34,24 @@ const PerfilDeputado = () => {
          * 
          * const resGastos = await axios.get(`/api/deputados/${id}/gastos-por-tipo`);
          * setGastosTipo(resGastos.data);
+         * 
+         * const resForn = await axios.get(`/api/deputados/${id}/fornecedores`);
+         * setFornecedores(resForn.data);
+         * 
+         * const resVotos = await axios.get(`/api/deputados/${id}/votacoes`);
+         * setVotacoes(resVotos.data);
          */
 
         // MOCK: Perfil Básico
         setPerfil({
           id_deputado: id,
-          nome: id === '12345' ? 'Nikolas Ferreira' : 'Guilherme Boulos', // Brincadeira simples com os IDs mockados
+          nome: id === '12345' ? 'Nikolas Ferreira' : 'Guilherme Boulos',
           partido: id === '12345' ? 'PL' : 'PSOL',
           uf: id === '12345' ? 'MG' : 'SP',
           escolaridade: 'Superior Completo'
         });
 
         // MOCK: Pergunta 2 - Eixo de Atuação (Nuvem de Palavras)
-        // O formato esperado pelo react-wordcloud é [{ text: string, value: number }]
         setNuvemPalavras([
           { text: 'Educação', value: 85 },
           { text: 'Saúde Pública', value: 65 },
@@ -63,6 +73,24 @@ const PerfilDeputado = () => {
           { tipo_gasto: 'Consultorias', total_gasto: 18000 },
         ]);
 
+        // MOCK: Pergunta 12 - Principais Fornecedores
+        setFornecedores([
+          { fornecedor_nome: 'POSTO DA TORRE LTDA', total_gasto: 45000 },
+          { fornecedor_nome: 'TAM LINHAS AEREAS S/A.', total_gasto: 32000 },
+          { fornecedor_nome: 'GOL LINHAS AEREAS S.A.', total_gasto: 28000 },
+          { fornecedor_nome: 'GRAFICA E EDITORA ALFA', total_gasto: 15000 },
+          { fornecedor_nome: 'LOCALIZA RENT A CAR', total_gasto: 12000 },
+        ]);
+
+        // MOCK: Pergunta 3 - Votações Recentes
+        setVotacoes([
+          { id: 1, data_votacao: '12/05/2024', descricao: 'PL 1234/2024 - Nova lei de diretrizes educacionais', voto: 'Sim', tema: 'Educação' },
+          { id: 2, data_votacao: '20/04/2024', descricao: 'PEC 45/2023 - Reforma Tributária', voto: 'Não', tema: 'Tributário' },
+          { id: 3, data_votacao: '15/03/2024', descricao: 'MPV 1150/2023 - Alterações no código florestal', voto: 'Abstenção', tema: 'Meio Ambiente' },
+          { id: 4, data_votacao: '28/02/2024', descricao: 'PL 567/2024 - Piso salarial dos professores', voto: 'Sim', tema: 'Educação' },
+          { id: 5, data_votacao: '10/01/2024', descricao: 'PLP 99/2023 - Arcabouço Fiscal', voto: 'Sim', tema: 'Economia' },
+        ]);
+
       } catch (error) {
         console.error("Erro ao buscar dados do perfil:", error);
       }
@@ -81,7 +109,7 @@ const PerfilDeputado = () => {
     return (
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center', alignItems: 'center', padding: '16px' }}>
         {nuvemPalavras.map((word, i) => {
-          const size = 14 + ((word.value - minVal) / (maxVal - minVal)) * 36; // Fontes entre 14px e 50px
+          const size = 14 + ((word.value - minVal) / (maxVal - minVal)) * 36;
           return (
             <span 
               key={i} 
@@ -103,6 +131,20 @@ const PerfilDeputado = () => {
         })}
       </div>
     );
+  };
+
+  // Filtragem da Timeline
+  const votacoesFiltradas = useMemo(() => {
+    if (filtroTema === 'Todos') return votacoes;
+    return votacoes.filter(v => v.tema === filtroTema);
+  }, [votacoes, filtroTema]);
+
+  const temasDisponiveis = ['Todos', ...new Set(votacoes.map(v => v.tema))];
+
+  const getVotoIcon = (voto) => {
+    if (voto === 'Sim') return <CheckCircle size={18} style={{ color: '#10b981' }} />;
+    if (voto === 'Não') return <XCircle size={18} style={{ color: '#ef4444' }} />;
+    return <MinusCircle size={18} style={{ color: '#f59e0b' }} />;
   };
 
   if (!perfil) return <div style={{ padding: '24px', color: 'var(--text-secondary)' }}>Carregando perfil...</div>;
@@ -140,13 +182,14 @@ const PerfilDeputado = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
+      {/* Grid Principal (Palavras e Gastos) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px', marginBottom: '24px' }}>
         
-        {/* Pergunta 2: Eixo de Atuação (Nuvem de Palavras) */}
+        {/* Pergunta 2: Eixo de Atuação */}
         <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
           <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Eixo de Atuação (Temas)</h2>
           <p className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '16px' }}>
-            Baseado na quantidade de proposições que o deputado foi autor. Palavras maiores indicam maior frequência do tema.
+            Baseado na quantidade de proposições que o deputado foi autor.
           </p>
           <div style={{ flex: 1, minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ width: '100%', height: '100%' }}>
@@ -159,7 +202,7 @@ const PerfilDeputado = () => {
         <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
           <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Distribuição de Gastos</h2>
           <p className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '16px' }}>
-            Valor líquido total gasto pelo parlamentar dividido por categoria (subcota).
+            Valor líquido total gasto pelo parlamentar dividido por categoria.
           </p>
           <div style={{ flex: 1, minHeight: '300px' }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -186,6 +229,86 @@ const PerfilDeputado = () => {
                 <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}/>
               </PieChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Grid Secundário (Fornecedores e Votações) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
+        
+        {/* Pergunta 12: Principais Fornecedores */}
+        <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Principais Fornecedores</h2>
+          <p className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '16px' }}>
+            Top 5 empresas/pessoas que mais receberam verba do deputado.
+          </p>
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {fornecedores.map((fornecedor, index) => {
+              const maxVal = fornecedores[0]?.total_gasto || 1;
+              const percent = (fornecedor.total_gasto / maxVal) * 100;
+              return (
+                <div key={index} style={{ marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)' }}>
+                      {index + 1}. {fornecedor.fornecedor_nome}
+                    </span>
+                    <span className="text-gradient" style={{ fontSize: '0.875rem', fontWeight: 600 }}>
+                      R$ {(fornecedor.total_gasto / 1000).toLocaleString('pt-BR')}k
+                    </span>
+                  </div>
+                  <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ width: `${percent}%`, height: '100%', background: 'var(--accent-primary)', borderRadius: '4px' }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Pergunta 3: Timeline de Votações */}
+        <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+            <div>
+              <h2 style={{ fontSize: '1.25rem', marginBottom: '4px' }}>Histórico de Votações</h2>
+              <p className="text-secondary" style={{ fontSize: '0.875rem' }}>Como o deputado votou recentemente.</p>
+            </div>
+            {/* Filtro por Tema */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: '8px' }}>
+              <Filter size={14} style={{ color: 'var(--text-secondary)' }} />
+              <select 
+                value={filtroTema} 
+                onChange={e => setFiltroTema(e.target.value)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontSize: '0.875rem', cursor: 'pointer' }}
+              >
+                {temasDisponiveis.map(tema => (
+                  <option key={tema} value={tema} style={{ background: 'var(--bg-surface)' }}>{tema}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', maxHeight: '350px', paddingRight: '8px' }} className="custom-scrollbar">
+            {votacoesFiltradas.length > 0 ? votacoesFiltradas.map(voto => (
+              <div key={voto.id} style={{ display: 'flex', gap: '16px', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', minWidth: '60px' }}>
+                  {getVotoIcon(voto.voto)}
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: voto.voto === 'Sim' ? '#10b981' : voto.voto === 'Não' ? '#ef4444' : '#f59e0b' }}>
+                    {voto.voto.toUpperCase()}
+                  </span>
+                </div>
+                <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '16px', flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{voto.data_votacao}</span>
+                    <span style={{ fontSize: '0.65rem', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px' }}>{voto.tema}</span>
+                  </div>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: 1.4 }}>
+                    {voto.descricao}
+                  </p>
+                </div>
+              </div>
+            )) : (
+              <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px' }}>Nenhuma votação encontrada para o tema selecionado.</div>
+            )}
           </div>
         </div>
 

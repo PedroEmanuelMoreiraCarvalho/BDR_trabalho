@@ -1,11 +1,11 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, PieChart, BarChart3, Settings, Search } from 'lucide-react';
+import { LayoutDashboard, Users, PieChart, BarChart3, Search } from 'lucide-react';
 import './Sidebar.css';
 
 const Sidebar = () => {
   const navItems = [
-    { path: '/', icon: <LayoutDashboard size={20} />, label: 'Visão Nacional' },
+    { path: '/', icon: <LayoutDashboard size={20} />, label: 'Visão Geral' },
     { path: '/partidos', icon: <Users size={20} />, label: 'Visão Partidária' },
     { path: '/parlamentares', icon: <Search size={20} />, label: 'Deputados' },
     { path: '/analise', icon: <BarChart3 size={20} />, label: 'Análises Avançadas' },
@@ -31,12 +31,6 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      <div className="sidebar-footer">
-        <div className="nav-item">
-          <Settings size={20} />
-          <span>Configurações</span>
-        </div>
-      </div>
     </aside>
   );
 };

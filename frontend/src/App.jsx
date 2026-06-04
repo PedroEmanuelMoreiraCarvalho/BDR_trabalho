@@ -4,6 +4,7 @@ import DashboardNacional from './pages/DashboardNacional';
 import BuscaParlamentares from './pages/BuscaParlamentares';
 import VisaoPartidaria from './pages/VisaoPartidaria';
 import PerfilDeputado from './pages/PerfilDeputado';
+import AnalisesAvancadas from './pages/AnalisesAvancadas';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
             <Route path="/partidos" element={<VisaoPartidaria />} />
             <Route path="/parlamentares" element={<BuscaParlamentares />} />
             <Route path="/parlamentares/:id" element={<PerfilDeputado />} />
+            <Route path="/analise" element={<AnalisesAvancadas />} />
             {/* Outras rotas entrarão aqui */}
           </Routes>
         </main>
