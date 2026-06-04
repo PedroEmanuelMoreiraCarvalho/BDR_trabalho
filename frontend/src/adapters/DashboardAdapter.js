@@ -1,31 +1,53 @@
+// Variável global de mock para manter os mesmos deputados entre paginações e requisições
+const MOCK_DEPUTADOS = Array.from({ length: 513 }, (_, i) => {
+  const partidos = ['PL', 'PT', 'UNIÃO', 'PP', 'MDB', 'PSD', 'REPUBLICANOS', 'PSB', 'PSOL', 'PDT'];
+  const ufs = ['SP', 'MG', 'RJ', 'BA', 'RS', 'PR', 'PE', 'CE', 'PA', 'SC'];
+  
+  return {
+    id_deputado: 1000 + i,
+    name: `Deputado ${String.fromCharCode(65 + (i % 26))}${i > 25 ? i : ''}`,
+    partido: partidos[i % partidos.length],
+    uf: ufs[(i * 3) % ufs.length],
+    indice_eficiencia: +(Math.random() * 10).toFixed(2),
+    gastos: Math.floor(Math.random() * 800000)
+  };
+});
+
 class DashboardAdapter {
-  // Retorna os dados da aba "Visão Geral" - Gastos
-  static async getVisaoGeralGastos() {
-    // Simula um delay de API
+  // Retorna os dados da aba "Visão Geral" - Ranking
+  static async getVisaoGeralRanking({ pagina = 1, itensPorPagina = 10, filtroPartido = 'Todos', filtroUF = 'Todos', metrica = 'eficiencia', ordem = 'desc' } = {}) {
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve([
-          { name: 'Dep. A', gastos: 45000, partido: 'PL', uf: 'SP' },
-          { name: 'Dep. B', gastos: 42000, partido: 'PT', uf: 'MG' },
-          { name: 'Dep. C', gastos: 39000, partido: 'PSOL', uf: 'RJ' },
-          { name: 'Dep. D', gastos: 35000, partido: 'UNIÃO', uf: 'SP' },
-          { name: 'Dep. E', gastos: 32000, partido: 'PL', uf: 'SC' },
-          { name: 'Dep. F', gastos: 29000, partido: 'PP', uf: 'PR' },
-          { name: 'Dep. G', gastos: 27000, partido: 'PT', uf: 'BA' },
-          { name: 'Dep. H', gastos: 24000, partido: 'MDB', uf: 'RS' },
-          { name: 'Dep. I', gastos: 21000, partido: 'PSB', uf: 'PE' },
-          { name: 'Dep. J', gastos: 19000, partido: 'PDT', uf: 'CE' },
-          { name: 'Dep. K', gastos: 16000, partido: 'PL', uf: 'RJ' },
-          { name: 'Dep. L', gastos: 14000, partido: 'PT', uf: 'SP' },
-          { name: 'Dep. M', gastos: 12000, partido: 'PSOL', uf: 'MG' },
-          { name: 'Dep. N', gastos: 10500, partido: 'UNIÃO', uf: 'BA' },
-          { name: 'Dep. O', gastos: 9000, partido: 'PP', uf: 'RS' },
-          { name: 'Dep. P', gastos: 7500, partido: 'MDB', uf: 'SC' },
-          { name: 'Dep. Q', gastos: 6000, partido: 'PSB', uf: 'PR' },
-          { name: 'Dep. R', gastos: 4500, partido: 'PDT', uf: 'PE' },
-          { name: 'Dep. S', gastos: 3000, partido: 'PL', uf: 'CE' },
-          { name: 'Dep. T', gastos: 1500, partido: 'PT', uf: 'SP' },
-        ]);
+        let dadosFiltrados = [...MOCK_DEPUTADOS];
+
+        // Aplica Filtros
+        if (filtroPartido !== 'Todos') dadosFiltrados = dadosFiltrados.filter(d => d.partido === filtroPartido);
+        if (filtroUF !== 'Todos') dadosFiltrados = dadosFiltrados.filter(d => d.uf === filtroUF);
+
+        // Calcula Totais
+        const totalItens = dadosFiltrados.length;
+        const totalGastos = dadosFiltrados.reduce((acc, curr) => acc + (curr.gastos || 0), 0);
+
+        // Aplica Ordenação
+        dadosFiltrados.sort((a, b) => {
+          const valA = metrica === 'eficiencia' ? a.indice_eficiencia : (a.gastos || 0);
+          const valB = metrica === 'eficiencia' ? b.indice_eficiencia : (b.gastos || 0);
+          return ordem === 'desc' ? valB - valA : valA - valB;
+        });
+
+        // Calcula Posições do Ranking antes da paginação
+        dadosFiltrados = dadosFiltrados.map((d, index) => ({ ...d, posicao_ranking: index + 1 }));
+
+        // Aplica Paginação
+        const indexInicio = (pagina - 1) * itensPorPagina;
+        const paginatedData = dadosFiltrados.slice(indexInicio, indexInicio + itensPorPagina);
+
+        resolve({
+          data: paginatedData,
+          total: totalItens,
+          total_gastos: totalGastos,
+          total_paginas: Math.ceil(totalItens / itensPorPagina)
+        });
       }, 300);
     });
   }
@@ -145,7 +167,9 @@ class DashboardAdapter {
           email: id === '12345' ? 'dep.nikolasferreira@camara.leg.br' : 'dep.guilhermeboulos@camara.leg.br',
           telefone: '(61) 3215-5000',
           endereco: 'Câmara dos Deputados, Anexo IV, Gabinete 123 - Brasília, DF',
-          custo_beneficio: id === '12345' ? 8.5 : 7.2
+          indice_eficiencia: id === '12345' ? 8.5 : 7.2,
+          posicao_ranking: id === '12345' ? 12 : 51,
+          total_deputados: 513
         });
       }, 300);
     });
@@ -203,10 +227,10 @@ class DashboardAdapter {
     });
   }
 
-  static async getPerfilVotacoes(id) {
+  static async getPerfilVotacoes(id, { pagina = 1, itensPorPagina = 5, filtroTema = 'Todos', busca = '' } = {}) {
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve([
+        let mockVotacoes = [
           { id: 1, data_votacao: '12/05/2024', descricao: 'PL 1234/2024 - Nova lei de diretrizes educacionais', voto: 'Sim', tema: 'Educação', ementa: 'Altera as diretrizes e bases da educação nacional para incluir novas tecnologias no currículo básico do ensino fundamental.' },
           { id: 2, data_votacao: '20/04/2024', descricao: 'PEC 45/2023 - Reforma Tributária', voto: 'Não', tema: 'Tributário', ementa: 'Altera o Sistema Tributário Nacional para simplificar impostos sobre o consumo e criar o Imposto sobre Bens e Serviços (IBS).' },
           { id: 3, data_votacao: '15/03/2024', descricao: 'MPV 1150/2023 - Alterações no código florestal', voto: 'Abstenção', tema: 'Meio Ambiente', ementa: 'Dispõe sobre prazos e regras do Programa de Regularização Ambiental (PRA) e alterações em áreas de preservação permanente.' },
@@ -219,7 +243,31 @@ class DashboardAdapter {
           { id: 10, data_votacao: '10/08/2023', descricao: 'PL 111/2023 - Câmeras Policiais', voto: 'Sim', tema: 'Segurança', ementa: 'Obriga o uso de câmeras corporais por policiais em serviço.' },
           { id: 11, data_votacao: '05/07/2023', descricao: 'PEC 20/2023 - Fundo Partidário', voto: 'Abstenção', tema: 'Política', ementa: 'Aumenta o repasse de verbas públicas para o Fundo Eleitoral.' },
           { id: 12, data_votacao: '18/06/2023', descricao: 'PL 789/2023 - Demarcação de Terras', voto: 'Não', tema: 'Meio Ambiente', ementa: 'Estabelece o marco temporal para a demarcação de terras indígenas no Brasil.' },
-        ]);
+        ];
+
+        // Filtro Tema
+        if (filtroTema !== 'Todos') {
+          mockVotacoes = mockVotacoes.filter(v => v.tema === filtroTema);
+        }
+
+        // Busca de Texto
+        if (busca.trim() !== '') {
+          const s = busca.toLowerCase();
+          mockVotacoes = mockVotacoes.filter(v => v.descricao.toLowerCase().includes(s) || (v.ementa && v.ementa.toLowerCase().includes(s)));
+        }
+
+        const total = mockVotacoes.length;
+        const total_paginas = Math.ceil(total / itensPorPagina);
+        
+        const indexInicio = (pagina - 1) * itensPorPagina;
+        const data = mockVotacoes.slice(indexInicio, indexInicio + itensPorPagina);
+
+        resolve({
+          data,
+          total,
+          total_paginas,
+          temas_disponiveis: ['Todos', 'Educação', 'Tributário', 'Meio Ambiente', 'Economia', 'Direito', 'Segurança', 'Política']
+        });
       }, 300);
     });
   }

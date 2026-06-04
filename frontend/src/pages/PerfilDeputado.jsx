@@ -1,31 +1,27 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, User as UserIcon, MapPin, BookOpen, CheckCircle, XCircle, MinusCircle, Filter, Calendar, Mail, Phone, Building, Info } from 'lucide-react';
-import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import DashboardAdapter from '../adapters/DashboardAdapter';
 
 const PerfilDeputado = () => {
   const { id } = useParams();
 
-  // ==========================================
-  // ESTADOS DOS DADOS
-  // ==========================================
   const [perfil, setPerfil] = useState(null);
   const [nuvemPalavras, setNuvemPalavras] = useState([]);
   const [gastosTipo, setGastosTipo] = useState([]);
   const [fornecedores, setFornecedores] = useState([]);
   const [votacoes, setVotacoes] = useState([]);
+  const [showInfo, setShowInfo] = useState(false);
 
-  // Estado para filtro de votações
   const [filtroTema, setFiltroTema] = useState('Todos');
   const [buscaVotacao, setBuscaVotacao] = useState('');
   const [ementaExpandida, setEmentaExpandida] = useState(null);
   const [paginaAtual, setPaginaAtual] = useState(1);
+  const [totalVotacoes, setTotalVotacoes] = useState(0);
+  const [temasDisponiveis, setTemasDisponiveis] = useState(['Todos']);
   const itensPorPagina = 5;
 
-  // ==========================================
-  // SIMULAÇÃO DE CHAMADA À API (useEffect)
-  // ==========================================
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -40,9 +36,6 @@ const PerfilDeputado = () => {
 
         const fornecedoresData = await DashboardAdapter.getPerfilFornecedores(id);
         setFornecedores(fornecedoresData);
-
-        const votacoesData = await DashboardAdapter.getPerfilVotacoes(id);
-        setVotacoes(votacoesData);
       } catch (error) {
         console.error("Erro ao buscar dados do perfil:", error);
       }
@@ -50,6 +43,38 @@ const PerfilDeputado = () => {
 
     fetchData();
   }, [id]);
+
+  useEffect(() => {
+    const fetchVotacoes = async () => {
+      try {
+        const votacoesData = await DashboardAdapter.getPerfilVotacoes(id, {
+          pagina: paginaAtual,
+          itensPorPagina,
+          filtroTema,
+          busca: buscaVotacao
+        });
+        setVotacoes(votacoesData.data);
+        setTotalVotacoes(votacoesData.total);
+        if (votacoesData.temas_disponiveis) {
+          setTemasDisponiveis(votacoesData.temas_disponiveis);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar votações:", error);
+      }
+    };
+    
+    fetchVotacoes();
+  }, [id, paginaAtual, filtroTema, buscaVotacao]);
+
+  const calcularPercentualRanking = (posicao, total) => {
+    if (!posicao || !total) return '';
+    const percentil = (posicao / total) * 100;
+    if (percentil <= 50) {
+      return `Entre os ${Math.ceil(percentil)}% mais eficientes da câmara`;
+    } else {
+      return `Entre os ${Math.floor(100 - percentil)}% menos eficientes da câmara`;
+    }
+  };
 
   const COLORS_PIE = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
 
@@ -85,7 +110,6 @@ const PerfilDeputado = () => {
     );
   };
 
-  // Processamento de Gastos (Top 5 + Outros e Total)
   const { gastosProcessados, valorTotalGastos } = useMemo(() => {
     if (!gastosTipo || gastosTipo.length === 0) return { gastosProcessados: [], valorTotalGastos: 0 };
     
@@ -104,24 +128,9 @@ const PerfilDeputado = () => {
     return { gastosProcessados: processed, valorTotalGastos: total };
   }, [gastosTipo]);
 
-  const temasDisponiveis = ['Todos', ...new Set(votacoes.map(v => v.tema))];
-  const votacoesFiltradas = votacoes.filter(v => {
-    const matchesTema = filtroTema === 'Todos' || v.tema === filtroTema;
-    const searchLower = buscaVotacao.toLowerCase();
-    const matchesBusca = v.descricao.toLowerCase().includes(searchLower) || (v.ementa && v.ementa.toLowerCase().includes(searchLower));
-    return matchesTema && matchesBusca;
-  });
 
-  // Reseta para página 1 sempre que os filtros mudarem
-  useEffect(() => {
-    setPaginaAtual(1);
-  }, [filtroTema, buscaVotacao]);
 
-  // Paginação
-  const totalPaginas = Math.ceil(votacoesFiltradas.length / itensPorPagina);
-  const indexUltimoItem = paginaAtual * itensPorPagina;
-  const indexPrimeiroItem = indexUltimoItem - itensPorPagina;
-  const votacoesPaginadas = votacoesFiltradas.slice(indexPrimeiroItem, indexUltimoItem);
+  const totalPaginas = Math.ceil(totalVotacoes / itensPorPagina);
 
   const getVotoIcon = (voto) => {
     if (voto === 'Sim') return <CheckCircle size={18} style={{ color: '#10b981' }} />;
@@ -133,7 +142,6 @@ const PerfilDeputado = () => {
 
   return (
     <div className="dashboard-container">
-      {/* Botão Voltar e Cabeçalho do Perfil */}
       <Link to="/parlamentares" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', textDecoration: 'none', marginBottom: '24px', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = 'var(--text-primary)'} onMouseOut={e => e.currentTarget.style.color = 'var(--text-secondary)'}>
         <ArrowLeft size={18} />
         <span>Voltar para Busca</span>
@@ -148,21 +156,37 @@ const PerfilDeputado = () => {
           )}
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <h1 style={{ fontSize: '2.5rem', margin: 0, lineHeight: 1.2 }}>{perfil.nome}</h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              {perfil.custo_beneficio && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '6px 16px', borderRadius: '16px', fontWeight: '600' }}>
-                  <span>Índice de Eficiência: {perfil.custo_beneficio}/10</span>
-                  <div title="O Índice de Eficiência (Custo-Benefício) divide o Benefício Gerado (Proposições ponderadas por tipo, aprovação e autoria + Presenças em plenário e comissões) pelo Custo do mandato (gastos). O resultado é ajustado por um Fator de Atividade para evitar distorções." style={{ display: 'flex', alignItems: 'center', cursor: 'help' }}>
-                    <Info size={16} />
-                  </div>
+            
+            {perfil.indice_eficiencia !== undefined && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', textAlign: 'right' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
+                <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Índice de Eficiência</span>
+                <div onMouseEnter={() => setShowInfo(true)} onMouseLeave={() => setShowInfo(false)} style={{ cursor: 'pointer', color: 'var(--text-muted)' }}>
+                  <Info size={16} />
                 </div>
-              )}
-              <span style={{ background: 'rgba(255,255,255,0.1)', padding: '6px 12px', borderRadius: '16px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                ID: {perfil.id_deputado}
-              </span>
+                {showInfo && (
+                  <div style={{ position: 'absolute', top: '100%', right: '0px', marginTop: '8px', zIndex: 50, width: '320px', padding: '12px', background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)', color: '#f9fafb', fontSize: '0.875rem', lineHeight: '1.4', textAlign: 'left' }}>
+                    <strong>Índice de Eficiência (0 a 10)</strong><br/>
+                    Avalia o Custo-Benefício do deputado baseando-se em:
+                    <ul style={{ paddingLeft: '16px', margin: '8px 0 0 0' }}>
+                      <li><strong>Projetos de Lei:</strong> Maior peso para PECs, projetos aprovados e autoria principal.</li>
+                      <li><strong>Assiduidade:</strong> Presença em Plenário e Comissões.</li>
+                      <li><strong>Gastos:</strong> Deputados com alta produção e baixo custo recebem os melhores scores.</li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginTop: '4px' }}>
+                <span style={{ fontSize: '2rem', fontWeight: 'bold', color: perfil.indice_eficiencia >= 5 ? '#10b981' : '#ef4444' }}>{perfil.indice_eficiencia}</span>
+                <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>/ 10</span>
+              </div>
+              <div style={{ fontSize: '0.75rem', color: (perfil.posicao_ranking / perfil.total_deputados) <= 0.5 ? '#10b981' : '#ef4444', marginTop: '2px', fontWeight: '500' }}>
+                {calcularPercentualRanking(perfil.posicao_ranking, perfil.total_deputados)}
+              </div>
             </div>
+          )}
           </div>
           
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '32px', color: 'var(--text-secondary)' }}>
@@ -200,10 +224,7 @@ const PerfilDeputado = () => {
         </div>
       </div>
 
-      {/* Grid Principal (Palavras e Gastos) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px', marginBottom: '24px' }}>
-
-        {/* Pergunta 2: Eixo de Atuação */}
         <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
           <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Eixo de Atuação (Palavras-chave)</h2>
           <p className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '16px' }}>
@@ -216,7 +237,6 @@ const PerfilDeputado = () => {
           </div>
         </div>
 
-        {/* Pergunta 13: Com o que o deputado mais gasta? */}
         <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
           <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Com o que o deputado mais gasta?</h2>
           <div style={{ marginBottom: '24px' }}>
@@ -229,7 +249,6 @@ const PerfilDeputado = () => {
           </div>
           
           <div style={{ display: 'flex', flexWrap: 'wrap', flex: 1, minHeight: '250px', alignItems: 'center', gap: '24px' }}>
-            {/* Gráfico na Esquerda */}
             <div style={{ flex: '1 1 200px', height: '250px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -256,7 +275,6 @@ const PerfilDeputado = () => {
               </ResponsiveContainer>
             </div>
 
-            {/* Legenda na Direita */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: '1 1 200px', overflowY: 'auto', maxHeight: '250px', paddingRight: '8px' }} className="custom-scrollbar">
               {gastosProcessados.map((item, index) => {
                 const percent = valorTotalGastos ? ((item.total_gasto / valorTotalGastos) * 100).toFixed(1) : 0;
@@ -284,10 +302,7 @@ const PerfilDeputado = () => {
         </div>
       </div>
 
-      {/* Grid Secundário (Fornecedores e Votações) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
-
-        {/* Pergunta 12: Principais Fornecedores */}
         <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
           <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Principais Fornecedores</h2>
           <p className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '16px' }}>
@@ -328,7 +343,7 @@ const PerfilDeputado = () => {
                 type="text" 
                 placeholder="Buscar (ex: PL 1234)" 
                 value={buscaVotacao} 
-                onChange={e => setBuscaVotacao(e.target.value)} 
+                onChange={e => { setBuscaVotacao(e.target.value); setPaginaAtual(1); }} 
                 style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '6px 12px', borderRadius: '8px', outline: 'none', fontSize: '0.875rem', minWidth: '150px' }}
               />
               {/* Filtro por Tema */}
@@ -336,7 +351,7 @@ const PerfilDeputado = () => {
                 <Filter size={14} style={{ color: 'var(--text-secondary)' }} />
                 <select
                   value={filtroTema}
-                  onChange={e => setFiltroTema(e.target.value)}
+                  onChange={e => { setFiltroTema(e.target.value); setPaginaAtual(1); }}
                   style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontSize: '0.875rem', cursor: 'pointer' }}
                 >
                   {temasDisponiveis.map(tema => (
@@ -348,7 +363,7 @@ const PerfilDeputado = () => {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', maxHeight: '400px', paddingRight: '8px' }} className="custom-scrollbar">
-            {votacoesPaginadas.length > 0 ? votacoesPaginadas.map(voto => (
+            {votacoes.length > 0 ? votacoes.map(voto => (
               <div key={voto.id} style={{ display: 'flex', gap: '16px', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', minWidth: '60px' }}>
                   {getVotoIcon(voto.voto)}

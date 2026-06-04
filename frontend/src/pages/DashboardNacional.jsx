@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { ChevronDown, ChevronUp, Filter } from 'lucide-react';
+import { ChevronDown, ChevronUp, Filter, Info } from 'lucide-react';
 import DashboardAdapter from '../adapters/DashboardAdapter';
 
 const DashboardNacional = () => {
@@ -11,62 +11,61 @@ const DashboardNacional = () => {
   const [filtroPartido, setFiltroPartido] = useState('Todos');
   const [filtroUF, setFiltroUF] = useState('Todos');
   const [ordem, setOrdem] = useState('desc');
+  const [metrica, setMetrica] = useState('eficiencia');
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const [showInfo, setShowInfo] = useState(false);
+  const itensPorPagina = 10;
 
-  // ==========================================
-  // ESTADOS DOS DADOS (Pronto para a API real)
-  // ==========================================
   const [baseData, setBaseData] = useState([]);
+  const [totalItens, setTotalItens] = useState(0);
+  const [totalGastos, setTotalGastos] = useState(0);
   const [dataEscolaridade, setDataEscolaridade] = useState([]);
   const [dataFornecedores, setDataFornecedores] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Estado para travar a renderização do gráfico até o dado chegar
+  const [appliedMetrica, setAppliedMetrica] = useState(metrica);
 
   // ==========================================
   // SIMULAÇÃO DE CHAMADA À API (useEffect)
   // ==========================================
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
-        /* 
-         * FUTURO: Integração com o Backend
-         * Quando o FastAPI estiver rodando, basta substituir os blocos abaixo por:
-         * 
-         * const resGastos = await axios.get('/api/gastos-nacionais');
-         * setBaseData(resGastos.data);
-         * 
-         * const resEscolaridade = await axios.get('/api/escolaridade');
-         * setDataEscolaridade(resEscolaridade.data);
-         * 
-         * const resFornecedores = await axios.get('/api/fornecedores');
-         * setDataFornecedores(resFornecedores.data);
-         */
-
-        // MOCK via Adapter
-        const gastos = await DashboardAdapter.getVisaoGeralGastos();
-        setBaseData(gastos);
+        const rankingResponse = await DashboardAdapter.getVisaoGeralRanking({
+          pagina: paginaAtual,
+          itensPorPagina,
+          filtroPartido,
+          filtroUF,
+          metrica,
+          ordem
+        });
+        setBaseData(rankingResponse.data);
+        setTotalItens(rankingResponse.total);
+        setTotalGastos(rankingResponse.total_gastos);
+        setAppliedMetrica(metrica); // Atualiza a métrica visual apenas quando os novos dados chegam
 
         const escolaridade = await DashboardAdapter.getVisaoGeralEscolaridade();
         setDataEscolaridade(escolaridade);
 
         const fornecedores = await DashboardAdapter.getVisaoGeralFornecedores();
         setDataFornecedores(fornecedores);
-
       } catch (error) {
-        console.error("Erro ao buscar dados:", error);
+        console.error("Erro ao buscar dados do dashboard:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [paginaAtual, filtroPartido, filtroUF, metrica, ordem]);
 
-  // ==========================================
-  // LÓGICA DE FILTRAGEM (Aplicada sobre os dados no State)
-  // ==========================================
-  const filteredData = baseData
-    .filter(d => filtroPartido === 'Todos' || d.partido === filtroPartido)
-    .filter(d => filtroUF === 'Todos' || d.uf === filtroUF)
-    .sort((a, b) => ordem === 'desc' ? b.gastos - a.gastos : a.gastos - b.gastos);
 
-  const top10 = filteredData.slice(0, 10);
-  const restantes = filteredData.slice(10);
+
+  // Paginação - Agora gerenciada pela API (temos totalItens)
+  const totalPaginas = Math.ceil(totalItens / itensPorPagina);
+
   const COLORS_PIE = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444'];
 
   return (
@@ -89,7 +88,7 @@ const DashboardNacional = () => {
           <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Partido</label>
           <select
             value={filtroPartido}
-            onChange={(e) => setFiltroPartido(e.target.value)}
+            onChange={(e) => { setFiltroPartido(e.target.value); setPaginaAtual(1); }}
             style={{ width: '100%', padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
           >
             <option value="Todos" style={{ background: 'var(--bg-surface)' }}>Todos</option>
@@ -108,7 +107,7 @@ const DashboardNacional = () => {
           <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Estado (UF)</label>
           <select
             value={filtroUF}
-            onChange={(e) => setFiltroUF(e.target.value)}
+            onChange={(e) => { setFiltroUF(e.target.value); setPaginaAtual(1); }}
             style={{ width: '100%', padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
           >
             <option value="Todos" style={{ background: 'var(--bg-surface)' }}>Todos</option>
@@ -125,14 +124,32 @@ const DashboardNacional = () => {
         </div>
 
         <div style={{ flex: 1, minWidth: '150px' }}>
-          <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Ordenar por Gastos</label>
+          <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Métrica</label>
           <select
-            value={ordem}
-            onChange={(e) => setOrdem(e.target.value)}
+            value={metrica}
+            onChange={(e) => { setMetrica(e.target.value); setPaginaAtual(1); }}
             style={{ width: '100%', padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
           >
-            <option value="desc" style={{ background: 'var(--bg-surface)' }}>Maiores Gastos</option>
-            <option value="asc" style={{ background: 'var(--bg-surface)' }}>Menores Gastos</option>
+            <option value="eficiencia" style={{ background: 'var(--bg-surface)' }}>Índice de Eficiência</option>
+            <option value="gastos" style={{ background: 'var(--bg-surface)' }}>Total de Gastos</option>
+          </select>
+        </div>
+
+        <div style={{ flex: 1, minWidth: '150px' }}>
+          <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+            Ordem
+          </label>
+          <select
+            value={ordem}
+            onChange={(e) => { setOrdem(e.target.value); setPaginaAtual(1); }}
+            style={{ width: '100%', padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
+          >
+            <option value="desc" style={{ background: 'var(--bg-surface)' }}>
+              {metrica === 'eficiencia' ? 'Melhores Scores' : 'Maiores Gastos'}
+            </option>
+            <option value="asc" style={{ background: 'var(--bg-surface)' }}>
+              {metrica === 'eficiencia' ? 'Piores Scores' : 'Menores Gastos'}
+            </option>
           </select>
         </div>
       </div>
@@ -140,9 +157,15 @@ const DashboardNacional = () => {
       {/* Grid de Estatísticas */}
       <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '16px' }}>
         <div className="glass-card" style={{ padding: '16px 24px' }}>
-          <h3 className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '4px' }}>Total de Gastos (Filtrado)</h3>
+          <h3 className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '4px' }}>Deputados Listados (Filtrado)</h3>
           <p className="text-gradient" style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
-            R$ {(filteredData.reduce((acc, curr) => acc + curr.gastos, 0) / 1000).toFixed(1)}k
+            {totalItens}
+          </p>
+        </div>
+        <div className="glass-card" style={{ padding: '16px 24px' }}>
+          <h3 className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '4px' }}>Total de Gastos (Filtrado)</h3>
+          <p className="text-gradient" style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#3b82f6' }}>
+            R$ {(totalGastos / 1000000).toFixed(2)}M
           </p>
         </div>
       </div>
@@ -150,23 +173,86 @@ const DashboardNacional = () => {
       {/* Grid Principal de Gráficos */}
       <div className="charts-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '16px' }}>
         <div className="glass-card" style={{ padding: '16px 24px' }}>
-          <h2 style={{ marginBottom: '12px', fontSize: '1.125rem' }}>
-            {ordem === 'desc' ? 'Maiores' : 'Menores'} Gastos por Deputado
-          </h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', position: 'relative' }}>
+            <h2 style={{ fontSize: '1.125rem', margin: 0 }}>
+              Ranking de Deputados ({appliedMetrica === 'eficiencia' ? 'Índice de Eficiência' : 'Total de Gastos'})
+            </h2>
+            {appliedMetrica === 'eficiencia' && (
+              <div 
+                onMouseEnter={() => setShowInfo(true)}
+                onMouseLeave={() => setShowInfo(false)}
+                style={{ cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                <Info size={18} />
+              </div>
+            )}
+            
+            {showInfo && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                left: '0px',
+                marginTop: '8px',
+                zIndex: 50,
+                width: '350px',
+                padding: '12px',
+                background: '#1f2937',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '8px',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
+                color: '#f9fafb',
+                fontSize: '0.875rem',
+                lineHeight: '1.4'
+              }}>
+                <strong>Índice de Eficiência (0 a 10)</strong><br/>
+                Avalia o Custo-Benefício do deputado baseando-se em:
+                <ul style={{ paddingLeft: '16px', margin: '8px 0 0 0' }}>
+                  <li><strong>Projetos de Lei:</strong> Maior peso para PECs, projetos aprovados e autoria principal.</li>
+                  <li><strong>Assiduidade:</strong> Presença em Plenário e Comissões.</li>
+                  <li><strong>Gastos:</strong> Deputados com alta produção e baixo custo recebem os melhores scores.</li>
+                </ul>
+              </div>
+            )}
+          </div>
 
-          <div style={{ width: '100%', height: 220 }}>
-            {top10.length > 0 ? (
+          <div style={{ width: '100%', height: 400 }}>
+            {baseData.length > 0 ? (
               <ResponsiveContainer>
-                <BarChart data={top10} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
-                  <XAxis dataKey="name" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} axisLine={false} tickLine={false} />
+                <BarChart data={baseData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" horizontal={true} vertical={false} />
+                  <XAxis 
+                    type="number" 
+                    domain={[0, appliedMetrica === 'eficiencia' ? 10 : 800000]} 
+                    stroke="#9ca3af" 
+                    tick={{ fill: '#9ca3af', fontSize: 12 }} 
+                    axisLine={false} 
+                    tickLine={false} 
+                  />
+                  <YAxis 
+                    type="category" 
+                    width={220}
+                    dataKey={(data) => {
+                      return `${data.posicao_ranking}º - ${data.name} (${data.partido})`;
+                    }} 
+                    stroke="#9ca3af" 
+                    tick={{ fill: '#9ca3af', fontSize: 12 }} 
+                    axisLine={false} 
+                    tickLine={false} 
+                  />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f9fafb' }}
-                    itemStyle={{ color: '#3b82f6' }}
+                    itemStyle={{ color: appliedMetrica === 'eficiencia' ? '#10b981' : '#3b82f6' }}
                     cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                    formatter={(value) => [
+                      appliedMetrica === 'eficiencia' ? value : `R$ ${value.toLocaleString('pt-BR')}`,
+                      appliedMetrica === 'eficiencia' ? 'Score' : 'Gastos'
+                    ]}
                   />
-                  <Bar dataKey="gastos" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  <Bar 
+                    dataKey={appliedMetrica === 'eficiencia' ? 'indice_eficiencia' : 'gastos'} 
+                    fill={appliedMetrica === 'eficiencia' ? '#10b981' : '#3b82f6'} 
+                    radius={[0, 4, 4, 0]} 
+                  />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -176,61 +262,28 @@ const DashboardNacional = () => {
             )}
           </div>
 
-          {restantes.length > 0 && (
-            <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  cursor: 'pointer',
-                  padding: '4px 0',
-                  userSelect: 'none'
-                }}
-                onClick={() => setIsExpanded(!isExpanded)}
+          {/* Paginação */}
+          {totalPaginas > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              <button 
+                onClick={() => setPaginaAtual(prev => Math.max(prev - 1, 1))}
+                disabled={paginaAtual === 1}
+                style={{ padding: '6px 12px', borderRadius: '6px', background: paginaAtual === 1 ? 'rgba(255,255,255,0.05)' : 'var(--accent-primary)', color: paginaAtual === 1 ? 'var(--text-secondary)' : '#fff', border: 'none', cursor: paginaAtual === 1 ? 'not-allowed' : 'pointer', fontSize: '0.875rem' }}
               >
-                <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  Ver o restante da lista ({restantes.length} deputados)
-                </h3>
-                <div style={{ color: 'var(--text-secondary)', transition: 'transform 0.3s' }}>
-                  {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                </div>
-              </div>
-
-              {isExpanded && (
-                <div style={{
-                  marginTop: '12px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '6px',
-                  maxHeight: '250px',
-                  overflowY: 'auto',
-                  paddingRight: '8px'
-                }}>
-                  {restantes.map((dep, index) => (
-                    <div key={index} style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      padding: '12px',
-                      background: 'rgba(255,255,255,0.02)',
-                      border: '1px solid rgba(255,255,255,0.05)',
-                      borderRadius: '8px',
-                      transition: 'background 0.2s',
-                      alignItems: 'center'
-                    }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontWeight: '500', color: 'var(--text-primary)', fontSize: '0.875rem' }}>
-                          <span style={{ color: 'var(--text-muted)', marginRight: '8px' }}>#{index + 11}</span>
-                          {dep.name}
-                        </span>
-                      </div>
-                      <span className="text-gradient" style={{ fontWeight: '600', fontSize: '0.875rem' }}>
-                        R$ {dep.gastos.toLocaleString('pt-BR')}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+                Anterior
+              </button>
+              
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                Página {paginaAtual} de {totalPaginas}
+              </span>
+              
+              <button 
+                onClick={() => setPaginaAtual(prev => Math.min(prev + 1, totalPaginas))}
+                disabled={paginaAtual === totalPaginas}
+                style={{ padding: '6px 12px', borderRadius: '6px', background: paginaAtual === totalPaginas ? 'rgba(255,255,255,0.05)' : 'var(--accent-primary)', color: paginaAtual === totalPaginas ? 'var(--text-secondary)' : '#fff', border: 'none', cursor: paginaAtual === totalPaginas ? 'not-allowed' : 'pointer', fontSize: '0.875rem' }}
+              >
+                Próxima
+              </button>
             </div>
           )}
         </div>
