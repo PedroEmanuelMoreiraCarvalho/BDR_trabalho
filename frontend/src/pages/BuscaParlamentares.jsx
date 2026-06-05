@@ -1,36 +1,50 @@
-import React, { useState, useMemo } from 'react';
-import { Search, MapPin, User as UserIcon } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, MapPin, User as UserIcon, AlertCircle, Loader } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import DashboardAdapter from '../adapters/DashboardAdapter';
 
 const BuscaParlamentares = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [resultados, setResultados] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Mock de deputados incluindo ID
-  const allDeputados = [
-    { id: '12345', nome: 'Nikolas Ferreira', partido: 'PL', uf: 'MG', foto: 'https://via.placeholder.com/64' },
-    { id: '54321', nome: 'Guilherme Boulos', partido: 'PSOL', uf: 'SP', foto: 'https://via.placeholder.com/64' },
-    { id: '98765', nome: 'Erika Hilton', partido: 'PSOL', uf: 'SP', foto: 'https://via.placeholder.com/64' },
-    { id: '11223', nome: 'Kim Kataguiri', partido: 'UNIÃO', uf: 'SP', foto: 'https://via.placeholder.com/64' },
-    { id: '44556', nome: 'Eduardo Bolsonaro', partido: 'PL', uf: 'SP', foto: 'https://via.placeholder.com/64' },
-    { id: '77889', nome: 'Tabata Amaral', partido: 'PSB', uf: 'SP', foto: 'https://via.placeholder.com/64' },
-  ];
+  useEffect(() => {
+    // Debounce na busca para evitar múltiplas requisições ao banco
+    const timer = setTimeout(async () => {
+      if (searchTerm.trim().length < 3) {
+        setResultados([]); 
+        return;
+      }
+      
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await DashboardAdapter.pesquisarDeputados(searchTerm);
+        if (res && res.results) {
+          setResultados(res.results);
+        } else if (Array.isArray(res)) {
+          setResultados(res); // Caso a API retorne um array direto em algum fallback
+        } else {
+          setResultados([]);
+        }
+      } catch (err) {
+        console.error(err);
+        setError('Falha ao buscar parlamentares. Verifique se o servidor está rodando.');
+      } finally {
+        setLoading(false);
+      }
+    }, 500);
 
-  const filtrados = useMemo(() => {
-    if (!searchTerm) return allDeputados;
-    const lowerTerm = searchTerm.toLowerCase();
-    return allDeputados.filter(dep => 
-      dep.nome.toLowerCase().includes(lowerTerm) || 
-      dep.id.includes(lowerTerm) ||
-      dep.partido.toLowerCase().includes(lowerTerm)
-    );
-  }, [searchTerm, allDeputados]);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   return (
     <div className="dashboard-container">
       <header className="dashboard-header" style={{ marginBottom: '32px' }}>
         <div>
           <h1>Explorar Parlamentares</h1>
-          <p className="text-secondary">Busque por nome, partido ou ID do deputado</p>
+          <p className="text-secondary">Busque por nome do deputado na base de dados real</p>
         </div>
       </header>
 
@@ -39,7 +53,7 @@ const BuscaParlamentares = () => {
         <Search size={24} style={{ color: 'var(--text-secondary)' }} />
         <input 
           type="text"
-          placeholder="Ex: 12345, Boulos, Nikolas, PL..."
+          placeholder="Digite pelo menos 3 letras (Ex: Silva, Elmar, Zé Vitor...)"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{
@@ -51,22 +65,34 @@ const BuscaParlamentares = () => {
             outline: 'none',
           }}
         />
+        {loading && <Loader size={24} style={{ color: 'var(--accent-primary)', animation: 'spin 1s linear infinite' }} />}
       </div>
+
+      {error && (
+        <div style={{ padding: '16px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderRadius: '8px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <AlertCircle size={20} />
+          {error}
+        </div>
+      )}
 
       {/* Grid de Resultados */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px' }}>
-        {filtrados.map(dep => (
+        {resultados.map(dep => (
           <Link 
             key={dep.id} 
             to={`/parlamentares/${dep.id}`} 
             style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
           >
-            <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer', padding: '16px' }}>
+            <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer', padding: '16px', transition: 'transform 0.2s' }}>
               <div style={{ 
-                width: '64px', height: '64px', borderRadius: '50%', 
+                width: '64px', height: '64px', borderRadius: '50%', overflow: 'hidden',
                 background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' 
               }}>
-                <UserIcon size={32} style={{ color: 'var(--text-secondary)' }} />
+                {dep.url_perfil ? (
+                  <img src={dep.url_perfil} alt={dep.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <UserIcon size={32} style={{ color: 'var(--text-secondary)' }} />
+                )}
               </div>
               <div style={{ flex: 1 }}>
                 <h3 style={{ fontSize: '1.1rem', marginBottom: '4px', color: 'var(--text-primary)' }}>{dep.nome}</h3>
@@ -79,15 +105,22 @@ const BuscaParlamentares = () => {
                   </span>
                 </div>
                 <div style={{ marginTop: '8px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  ID: {dep.id}
+                  {dep.situacao} • ID: {dep.id}
                 </div>
               </div>
             </div>
           </Link>
         ))}
-        {filtrados.length === 0 && (
+        
+        {!loading && searchTerm.trim().length >= 3 && resultados.length === 0 && (
           <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '48px', color: 'var(--text-secondary)' }}>
-            Nenhum parlamentar encontrado com esse termo.
+            Nenhum parlamentar encontrado com esse nome.
+          </div>
+        )}
+        
+        {!loading && searchTerm.trim().length < 3 && (
+          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '48px', color: 'var(--text-secondary)' }}>
+            Digite pelo menos 3 caracteres para iniciar a busca.
           </div>
         )}
       </div>

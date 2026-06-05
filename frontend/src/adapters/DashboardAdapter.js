@@ -1,5 +1,5 @@
 const API_BASE = 'http://localhost:3000/api';
-const USE_MOCK = true; // Mude para false para voltar a usar o backend (PostgreSQL)
+const USE_MOCK = false; // Mude para false para voltar a usar o backend (PostgreSQL)
 
 const MOCK_DEPUTADOS = [
   { id: 1, name: 'João Silva', partido: 'PL', uf: 'SP', gastos: 450000, indice_eficiencia: 8.5 },
@@ -173,6 +173,26 @@ class DashboardAdapter {
   // ==========================================
   // Aba "Perfil do Deputado"
   // ==========================================
+
+  static async pesquisarDeputados(nome) {
+    if (USE_MOCK) {
+      return new Promise((resolve) => setTimeout(() => {
+        resolve({
+          total: 2,
+          limit: 50,
+          offset: 0,
+          results: [
+            { id: 178854, nome: "Elmar Nascimento", partido: "UNIÃO", uf: "BA", url_perfil: "https://www.camara.leg.br/internet/deputado/bandep/178854.jpg", situacao: "Exercício", condicao_eleitoral: "Titular" },
+            { id: 204517, nome: "Zé Vitor", partido: "PL", uf: "MG", url_perfil: "https://www.camara.leg.br/internet/deputado/bandep/204517.jpg", situacao: "Exercício", condicao_eleitoral: "Titular" }
+          ]
+        });
+      }, 300));
+    }
+    return this._fetch('/deputados/pesquisa', {
+      method: 'POST',
+      body: JSON.stringify({ nome })
+    });
+  }
 
   static async getPerfilDeputado(id) {
     if (USE_MOCK) {
