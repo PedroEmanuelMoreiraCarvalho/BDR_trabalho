@@ -3,7 +3,7 @@ const cors = require('cors');
 const dbAdapter = require('./DatabaseAdapter'); // Importa a nossa nova classe
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000; // changed to avoid port conflict
 
 app.use(cors());
 app.use(express.json());
@@ -18,12 +18,15 @@ async function startServer() {
       try {
         // Agora chamamos os métodos do adapter em vez de fazer queries soltas aqui
         const horaAtual = await dbAdapter.getHoraAtual();
-        
-        res.json({ 
+
+        res.json({
           status: 'sucesso',
-          mensagem: 'A API está conectada ao banco usando a classe DatabaseAdapter!', 
+          mensagem: 'A API está conectada ao banco usando a classe DatabaseAdapter!',
           data_do_banco: horaAtual
         });
+
+        // Duplicate ranking-beneficio route removed (handled later correctly)
+
       } catch (error) {
         res.status(500).json({ status: 'erro', mensagem: 'Erro interno no banco' });
       }
@@ -39,24 +42,19 @@ async function startServer() {
       }
     });
 
-    // 4. Rota POST para o Ranking Geral (Recebe os filtros no body)
-    app.post('/api/ranking', async (req, res) => {
+    // 4.2. Rota POST para o Ranking de Benefícios (paginação)
+    app.post('/api/ranking-beneficio', async (req, res) => {
       try {
-        // Os parâmetros virão do frontend através do req.body
         const parametros = {
           pagina: req.body.pagina || 1,
           itensPorPagina: req.body.itensPorPagina || 10,
-          filtroPartido: req.body.filtroPartido || 'Todos',
-          filtroUF: req.body.filtroUF || 'Todos',
-          metrica: req.body.metrica || 'eficiencia',
           ordem: req.body.ordem || 'desc'
         };
-
-        const dados = await dbAdapter.getVisaoGeralRanking(parametros);
+        const dados = await dbAdapter.getBeneficioRanking(parametros);
         res.json(dados);
       } catch (error) {
-        console.error('Erro na rota /api/ranking:', error);
-        res.status(500).json({ erro: 'Falha ao buscar o ranking no banco de dados' });
+        console.error('Erro na rota /api/ranking-beneficio:', error);
+        res.status(500).json({ erro: 'Falha ao buscar o ranking de benefícios no banco de dados' });
       }
     });
 
@@ -162,7 +160,44 @@ async function startServer() {
       }
     });
 
-    // 13. Rota POST para Votações do Deputado (com filtros e paginação)
+    //13. Rota POST que retorna pesquisa de deputados por nome
+    app.post('/api/deputados/pesquisa', async (req, res) => {
+      try {
+        const dados = await dbAdapter.getDeputadosPorNome(req.body.nome);
+        res.json(dados);
+      } catch (error) {
+        console.error('Erro na rota /api/deputados/pesquisa:', error);
+        res.status(500).json({ erro: 'Falha ao buscar deputados por nome' });
+      }
+    });
+
+    // 13.1. Rota POST para pesquisa de deputados por CPF
+    app.post('/api/deputados/cpf', async (req, res) => {
+      try {
+        const cpf = req.body.cpf || '';
+        const pagina = req.body.pagina || 1;
+        const itensPorPagina = req.body.itensPorPagina || 10;
+        const filtroPartido = req.body.filtroPartido || null;
+        const filtroUF = req.body.filtroUF || null;
+
+        // Construir opções de paginação e filtro
+        const options = {
+          partido: filtroPartido,
+          uf: filtroUF,
+          limit: itensPorPagina,
+          offset: (pagina - 1) * itensPorPagina,
+          exactMatch: false // busca por semelhança de prefixo
+        };
+
+        const dados = await dbAdapter.getDeputadosPorCPF(cpf, options);
+        res.json(dados);
+      } catch (error) {
+        console.error('Erro na rota /api/deputados/cpf:', error);
+        res.status(500).json({ erro: 'Falha ao buscar deputados por CPF' });
+      }
+    });
+
+    // 14. Rota POST para Votações do Deputado (com filtros e paginação)
     app.post('/api/deputados/:id/votacoes', async (req, res) => {
       try {
         const parametros = {
@@ -179,7 +214,7 @@ async function startServer() {
       }
     });
 
-    // 14. Inicia o servidor Express
+    // 15. Inicia o servidor Express
     app.listen(port, () => {
       console.log(`🚀 Servidor backend rodando em http://localhost:${port}`);
       console.log(`👉 Teste a rota acessando no navegador: http://localhost:${port}/api/teste-conexao`);

@@ -15,7 +15,7 @@ DB_CONFIG = {
     'password': 'admin123'  # Ajuste sua senha
 }
 
-NOME_BANCO = 'meu_banco'
+NOME_BANCO = 'backend'
 
 def salvar_metadados(metadados, nome_arquivo="metadados_carga.json"):
     """

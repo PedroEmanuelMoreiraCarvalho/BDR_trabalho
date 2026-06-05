@@ -16,6 +16,8 @@ class DatabaseAdapter {
     try {
       await this.client.connect();
       console.log('✅ DatabaseAdapter: Conectado ao banco de dados com sucesso!');
+      // Ensure unaccent extension is available for accent-insensitive searches
+      await this.client.query('CREATE EXTENSION IF NOT EXISTS unaccent;');
     } catch (error) {
       console.error('❌ DatabaseAdapter: Erro ao conectar ao banco.', error);
       throw error; // Lança o erro para quem chamou a função tratar
@@ -500,7 +502,470 @@ class DatabaseAdapter {
     }
   }
 
+  // Retorna pesqusia de deputados pelo nome:
+  async getDeputadosPorNome(nomePesquisa, options = {}) {
+    try {
+      const {
+        partido = null,
+        uf = null,
+        limit = 50,
+        offset = 0,
+        exactMatch = false
+      } = options;
+
+      let whereClause = '';
+      const params = [];
+      let paramIndex = 1;
+
+        // Condição para busca por nome (accent-insensitive)
+        const searchPattern = `%${nomePesquisa}%`;
+        if (exactMatch) {
+          whereClause = `(
+            unaccent(d.ultimo_status_nome_eleitoral) ILIKE unaccent($${paramIndex})
+            OR unaccent(d.nome_civil_deputado) ILIKE unaccent($${paramIndex})
+          )`;
+          params.push(searchPattern);
+        } else {
+          whereClause = `(
+            unaccent(d.ultimo_status_nome_eleitoral) ILIKE unaccent($${paramIndex})
+            OR unaccent(d.nome_civil_deputado) ILIKE unaccent($${paramIndex})
+          )`;
+          params.push(searchPattern);
+        }
+      paramIndex++;
+
+      // Filtro por partido
+      if (partido) {
+        whereClause += ` AND d.ultimo_status_sigla_partido = $${paramIndex}`;
+        params.push(partido.toUpperCase());
+        paramIndex++;
+      }
+
+      // Filtro por UF
+      if (uf) {
+        whereClause += ` AND d.ultimo_status_sigla_uf = $${paramIndex}`;
+        params.push(uf.toUpperCase());
+        paramIndex++;
+      }
+
+      const query = `
+        SELECT 
+          d.ultimo_status_nome_eleitoral AS nome,
+          d.nome_civil_deputado AS nome_civil,
+          d.ultimo_status_sigla_partido AS partido,
+          d.ultimo_status_sigla_uf AS uf,
+          d.ultimo_status_url_foto AS url_perfil,
+          d.id_deputado,
+          d.ultimo_status_situacao AS situacao,
+          d.ultimo_status_condicao_eleitoral AS condicao_eleitoral
+        FROM deputados d
+        WHERE ${whereClause}
+          AND d.ultimo_status_situacao = 'Exercício'  -- Filtra apenas deputados em exercício
+        ORDER BY d.ultimo_status_nome_eleitoral
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+      `;
+
+      params.push(limit, offset);
+      const result = await this.client.query(query, params);
+
+      // Query para contar total de resultados (para paginação)
+      const countQuery = `
+        SELECT COUNT(*) as total
+        FROM deputados d
+        WHERE ${whereClause}
+          AND d.ultimo_status_situacao = 'Exercício'
+      `;
+
+      const countResult = await this.client.query(countQuery, params.slice(0, -2));
+
+      return {
+        total: parseInt(countResult.rows[0].total),
+        limit,
+        offset,
+        results: result.rows.map(row => ({
+          id: row.id_deputado,
+          nome: row.nome,
+          nome_civil: row.nome_civil,
+          partido: row.partido,
+          uf: row.uf,
+          url_perfil: row.url_perfil,
+          situacao: row.situacao,
+          condicao_eleitoral: row.condicao_eleitoral
+        }))
+      };
+    } catch (error) {
+      console.error('Erro na query getDeputadosPorNome:', error);
+      throw error;
+    }
+  }
+
+  //retorna deputado por pesquisa de cpf
+  async getDeputadosPorCPF(cpfPesquisa, options = {}) {
+    try {
+      const {
+        partido = null,
+        uf = null,
+        limit = 50,
+        offset = 0,
+        exactMatch = false // Busca por semelhança (prefixo) por padrão
+      } = options;
+
+      // Remove caracteres não numéricos do CPF
+      const cpfLimpo = String(cpfPesquisa).replace(/\D/g, '');
+
+      if (!cpfLimpo) {
+        // If no CPF provided, return empty result set
+        return {
+          total: 0,
+          limit,
+          offset,
+          cpf_pesquisado: '',
+          results: []
+        };
+      }
+
+      let whereClause = '';
+      const params = [];
+      let paramIndex = 1;
+
+      // Condição para busca por CPF (sempre usando LIKE para prefixo)
+      if (exactMatch) {
+        // Caso o usuário queira correspondência exata
+        whereClause = `d.cpf_deputado = $${paramIndex}`;
+        params.push(cpfLimpo);
+      } else {
+        // Busca por prefixo: qualquer CPF que comece com os dígitos fornecidos
+        whereClause = `d.cpf_deputado LIKE $${paramIndex}`;
+        params.push(`${cpfLimpo}%`);
+      }
+      paramIndex++;
+
+      // Filtro por partido
+      if (partido) {
+        whereClause += ` AND d.ultimo_status_sigla_partido = $${paramIndex}`;
+        params.push(partido.toUpperCase());
+        paramIndex++;
+      }
+
+      // Filtro por UF
+      if (uf) {
+        whereClause += ` AND d.ultimo_status_sigla_uf = $${paramIndex}`;
+        params.push(uf.toUpperCase());
+        paramIndex++;
+      }
+
+      const query = `
+        SELECT 
+          d.id_deputado,
+          d.cpf_deputado AS cpf,
+          d.ultimo_status_nome_eleitoral AS nome,
+          d.nome_civil_deputado AS nome_civil,
+          d.ultimo_status_sigla_partido AS partido,
+          d.ultimo_status_sigla_uf AS uf,
+          d.ultimo_status_url_foto AS url_perfil,
+          d.sexo_deputado AS sexo,
+          d.data_nascimento_deputado AS data_nascimento,
+          d.escolaridade_deputado AS escolaridade,
+          d.ultimo_status_situacao AS situacao,
+          d.ultimo_status_condicao_eleitoral AS condicao_eleitoral,
+          d.uri_deputado AS uri
+        FROM deputados d
+        WHERE ${whereClause}
+        ORDER BY d.ultimo_status_nome_eleitoral
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+      `;
+
+      params.push(limit, offset);
+      const result = await this.client.query(query, params);
+
+      // Query para contar total de resultados (para paginação)
+      const countQuery = `
+        SELECT COUNT(*) as total
+        FROM deputados d
+        WHERE ${whereClause}
+      `;
+
+      const countResult = await this.client.query(countQuery, params.slice(0, -2));
+
+      // Formata o CPF para exibição (opcional)
+      const formatarCPF = (cpf) => {
+        if (!cpf || cpf.length !== 11) return cpf;
+        return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+      };
+
+      return {
+        total: parseInt(countResult.rows[0].total),
+        limit,
+        offset,
+        cpf_pesquisado: formatarCPF(cpfLimpo),
+        results: result.rows.map(row => ({
+          id: row.id_deputado,
+          cpf: formatarCPF(row.cpf),
+          cpf_numerico: row.cpf, // CPF sem formatação para uso em outras consultas
+          nome: row.nome,
+          nome_civil: row.nome_civil,
+          partido: row.partido,
+          uf: row.uf,
+          url_perfil: row.url_perfil,
+          sexo: row.sexo,
+          data_nascimento: row.data_nascimento,
+          escolaridade: row.escolaridade,
+          situacao: row.situacao,
+          condicao_eleitoral: row.condicao_eleitoral,
+          uri: row.uri
+        }))
+      };
+    } catch (error) {
+      console.error('Erro na query getDeputadosPorCPF:', error);
+      throw error;
+    }
+  }
+  // Retorna ranking de benefícios dos deputados com paginação
+  async getBeneficioRanking({ pagina = 1, itensPorPagina = 10, ordem = 'desc' } = {}) {
+    try {
+      const limit = parseInt(itensPorPagina);
+      const offset = (parseInt(pagina) - 1) * limit;
+      const query = `
+WITH
+pesos AS (
+SELECT
+7.0::numeric AS peso_proposicao,
+1.5::numeric AS peso_plenario,
+1.0::numeric AS peso_comissoes
+),
+
+gastos AS (
+SELECT
+d.id_deputado,
+SUM(COALESCE(d.valor_liquido,0)) AS total_gasto
+FROM despesas d
+GROUP BY d.id_deputado
+),
+
+autoria AS (
+SELECT
+id_proposicao,
+COUNT(*) AS qtd_autores
+FROM proposicoes_autores
+GROUP BY id_proposicao
+),
+
+proposicoes_score AS (
+SELECT
+pa.id_deputado,
+COUNT(DISTINCT pa.id_proposicao) AS total_proposicoes,
+SUM(
+/* ==========================
+   PESO DO TIPO
+   ========================== */
+(
+    CASE
+        /* Muito relevantes */
+        WHEN p.sigla_tipo_proposicao = 'PEC'
+            THEN 20.0
+        WHEN p.sigla_tipo_proposicao = 'PL'
+            THEN 15.0
+        /* Relevantes */
+        WHEN p.sigla_tipo_proposicao IN (
+            'PLP',
+            'MPV',
+            'PDL',
+            'PRC',
+            'PLV',
+            'PLN'
+        )
+            THEN 10.0
+        /* Fiscalização */
+        WHEN p.sigla_tipo_proposicao IN (
+            'PFC',
+            'RIC',
+            'RCP',
+            'INC',
+            'SIT'
+        )
+            THEN 5.0
+        /* Emendas */
+        WHEN p.sigla_tipo_proposicao IN (
+            'EMC',
+            'EMP',
+            'EMR',
+            'EMS',
+            'EMA',
+            'EML',
+            'EMO',
+            'ESB',
+            'SBE',
+            'SBE-A',
+            'SBT',
+            'SBT-A',
+            'SBR',
+            'SSP',
+            'ERD'
+        )
+            THEN 2.0
+        /* Processuais */
+        WHEN p.sigla_tipo_proposicao IN (
+            'REQ',
+            'REC',
+            'RPD',
+            'RPDR',
+            'DTQ',
+            'PPP',
+            'PIN',
+            'PRR',
+            'RRC'
+        )
+            THEN 1.0
+        /* Restante */
+        ELSE 0.1
+    END
+)
+*
+/* ==========================
+   SITUAÇÃO
+   ========================== */
+(
+    CASE
+        /* APROVADA */
+        WHEN p.ultimo_status_id_situacao IN (
+            1140
+        )
+            THEN 1.00
+        /* AVANÇADA */
+        WHEN p.ultimo_status_id_situacao IN (
+            900,
+            926,
+            1150,
+            1293,
+            939
+        )
+            THEN 0.75
+        /* REJEITADA */
+        WHEN p.ultimo_status_id_situacao IN (
+            923,
+            941,
+            950,
+            1120,
+            1222,
+            1292
+        )
+            THEN 0.00
+        /* EM TRAMITAÇÃO */
+        ELSE 0.25
+    END
+)
+*
+/* ==========================
+   AUTORIA
+   ========================== */
+(
+    CASE
+        /* Autor único */
+        WHEN a.qtd_autores = 1
+            THEN 1.0
+        /* Autor principal */
+        WHEN pa.ordem_assinatura = 1
+            THEN 0.5
+        /* Coautores dividem os 50% restantes */
+        ELSE
+            0.5 / NULLIF(a.qtd_autores - 1,0)
+    END
+)
+) AS score_proposicoes
+FROM proposicoes_autores pa
+JOIN proposicoes p
+    ON p.id_proposicao = pa.id_proposicao
+JOIN autoria a
+    ON a.id_proposicao = pa.id_proposicao
+GROUP BY pa.id_deputado
+),
+
+presencas AS (
+SELECT
+    p.id_dep AS id_deputado,
+    SUM(plenario_presencas) AS plenario_presencas,
+    SUM(plenario_ausencias_justificadas) AS plenario_ausencias_justificadas,
+    SUM(plenario_ausencias_nao_justificadas) AS plenario_ausencias_nao_justificadas,
+    SUM(comissoes_presencas) AS comissoes_presencas,
+    SUM(comissoes_ausencias_justificadas) AS comissoes_ausencias_justificadas,
+    SUM(comissoes_ausencias_nao_justificadas) AS comissoes_ausencias_nao_justificadas
+FROM presenca_deputados p
+GROUP BY p.id_dep
+),
+
+presencas_score AS (
+SELECT
+    id_deputado,
+    GREATEST(
+        0,
+        (
+            plenario_presencas - (3 * plenario_ausencias_nao_justificadas)
+        ) * (plenario_presencas::numeric / NULLIF((plenario_presencas + plenario_ausencias_justificadas + plenario_ausencias_nao_justificadas), 0))
+    ) AS score_plenario,
+    GREATEST(
+        0,
+        (
+            comissoes_presencas - (3 * comissoes_ausencias_nao_justificadas)
+        ) * (comissoes_presencas::numeric / NULLIF((comissoes_presencas + comissoes_ausencias_justificadas + comissoes_ausencias_nao_justificadas), 0))
+    ) AS score_comissoes
+FROM presencas
+),
+
+beneficios AS (
+SELECT
+    d.id_deputado,
+    d.ultimo_status_nome_eleitoral AS deputado,
+    d.ultimo_status_sigla_partido AS partido,
+    d.ultimo_status_sigla_uf AS uf,
+    COALESCE(g.total_gasto,0) AS total_gasto,
+    COALESCE(psc.total_proposicoes,0) AS total_proposicoes,
+    COALESCE(psc.score_proposicoes,0) AS score_proposicoes,
+    COALESCE(pr.score_plenario,0) AS score_plenario,
+    COALESCE(pr.score_comissoes,0) AS score_comissoes,
+    (
+        (ps.peso_proposicao * COALESCE(psc.score_proposicoes,0)) +
+        (ps.peso_plenario * COALESCE(pr.score_plenario,0)) +
+        (ps.peso_comissoes * COALESCE(pr.score_comissoes,0))
+    ) AS beneficio_score
+FROM deputados d
+LEFT JOIN gastos g ON g.id_deputado = d.id_deputado
+LEFT JOIN proposicoes_score psc ON psc.id_deputado = d.id_deputado
+LEFT JOIN presencas_score pr ON pr.id_deputado = d.id_deputado
+CROSS JOIN pesos ps
+),
+
+p25 AS (
+SELECT
+    PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY beneficio_score) AS p25_beneficio
+FROM beneficios
+)
+SELECT
+b.id_deputado,
+b.deputado,
+b.partido,
+b.uf,
+ROUND(b.total_gasto,2) AS total_gasto,
+b.total_proposicoes,
+ROUND(b.score_proposicoes,2) AS score_proposicoes,
+ROUND(b.score_plenario,2) AS score_plenario,
+ROUND(b.score_comissoes,2) AS score_comissoes,
+ROUND(b.beneficio_score,2) AS beneficio_score,
+ROUND((b.beneficio_score / (b.beneficio_score + p.p25_beneficio))::numeric,4) AS fator_atividade,
+ROUND((b.beneficio_score * (b.beneficio_score / (b.beneficio_score + p.p25_beneficio)) / (1 + (b.total_gasto / 1000.0)))::numeric,4) AS indice_eficiencia
+FROM beneficios b
+CROSS JOIN p25 p
+ORDER BY indice_eficiencia ${ordem === 'asc' ? 'ASC' : 'DESC'}
+LIMIT ${limit} OFFSET ${offset}
+      `;
+      const result = await this.client.query(query);
+      return result.rows;
+    } catch (error) {
+      console.error('Erro na query getBeneficioRanking:', error);
+      throw error;
+    }
+  }
 }
+
 
 // Exportamos uma única instância (Padrão Singleton) para ser reaproveitada
 module.exports = new DatabaseAdapter();
