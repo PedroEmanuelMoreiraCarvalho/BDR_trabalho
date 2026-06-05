@@ -315,6 +315,7 @@ class DatabaseAdapter {
         SELECT 
           d.id_deputado,
           d.ultimo_status_nome_eleitoral AS nome,
+          d.nome_civil_deputado AS nome_civil,
           d.ultimo_status_sigla_partido AS partido,
           d.ultimo_status_sigla_uf AS uf,
           d.escolaridade_deputado AS escolaridade,
