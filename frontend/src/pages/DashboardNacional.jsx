@@ -35,14 +35,40 @@ const DashboardNacional = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const rankingResponse = await DashboardAdapter.getVisaoGeralRanking({
-          pagina: paginaAtual,
-          itensPorPagina,
-          filtroPartido,
-          filtroUF,
-          metrica,
-          ordem
-        });
+        let rankingResponse;
+        
+        if (metrica === 'eficiencia') {
+          // Ranking Benefício não possui filtros por estado ou partido no backend, 
+          // então chamamos diretamente com paginação e ordem.
+          const res = await DashboardAdapter.getRankingBeneficio({ pagina: paginaAtual, itensPorPagina, ordem });
+          
+          const offset = (paginaAtual - 1) * itensPorPagina;
+          const dataMapped = res.map((item, index) => ({
+            id_deputado: item.id_deputado,
+            name: item.deputado,
+            partido: item.partido,
+            uf: item.uf,
+            gastos: parseFloat(item.total_gasto || 0),
+            indice_eficiencia: parseFloat(item.indice_eficiencia || 0),
+            posicao_ranking: offset + index + 1
+          }));
+          
+          rankingResponse = {
+            data: dataMapped,
+            total: 513, // Total fixo pois não há filtros que reduzam a base
+            total_gastos: dataMapped.reduce((acc, curr) => acc + curr.gastos, 0)
+          };
+        } else {
+          rankingResponse = await DashboardAdapter.getVisaoGeralRanking({
+            pagina: paginaAtual,
+            itensPorPagina,
+            filtroPartido,
+            filtroUF,
+            metrica,
+            ordem
+          });
+        }
+
         setBaseData(rankingResponse.data);
         setTotalItens(rankingResponse.total);
         setTotalGastos(rankingResponse.total_gastos);
@@ -113,12 +139,14 @@ const DashboardNacional = () => {
           <span style={{ fontWeight: 500 }}>Filtros:</span>
         </div>
 
-        <div style={{ flex: 1, minWidth: '150px' }}>
+        <div style={{ flex: 1, minWidth: '150px', opacity: metrica === 'eficiencia' ? 0.5 : 1 }}>
           <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Partido</label>
           <select
             value={filtroPartido}
             onChange={(e) => { setFiltroPartido(e.target.value); setPaginaAtual(1); }}
-            style={{ width: '100%', padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
+            disabled={metrica === 'eficiencia'}
+            title={metrica === 'eficiencia' ? "Filtro indisponível para Índice de Eficiência" : ""}
+            style={{ width: '100%', padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none', cursor: metrica === 'eficiencia' ? 'not-allowed' : 'pointer' }}
           >
             <option value="Todos" style={{ background: 'var(--bg-surface)' }}>Todos</option>
             <option value="PL" style={{ background: 'var(--bg-surface)' }}>PL</option>
@@ -132,12 +160,14 @@ const DashboardNacional = () => {
           </select>
         </div>
 
-        <div style={{ flex: 1, minWidth: '150px' }}>
+        <div style={{ flex: 1, minWidth: '150px', opacity: metrica === 'eficiencia' ? 0.5 : 1 }}>
           <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Estado (UF)</label>
           <select
             value={filtroUF}
             onChange={(e) => { setFiltroUF(e.target.value); setPaginaAtual(1); }}
-            style={{ width: '100%', padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
+            disabled={metrica === 'eficiencia'}
+            title={metrica === 'eficiencia' ? "Filtro indisponível para Índice de Eficiência" : ""}
+            style={{ width: '100%', padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none', cursor: metrica === 'eficiencia' ? 'not-allowed' : 'pointer' }}
           >
             <option value="Todos" style={{ background: 'var(--bg-surface)' }}>Todos</option>
             <option value="SP" style={{ background: 'var(--bg-surface)' }}>SP</option>

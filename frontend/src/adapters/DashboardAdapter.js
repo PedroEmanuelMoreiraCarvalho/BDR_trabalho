@@ -92,6 +92,33 @@ class DashboardAdapter {
     });
   }
 
+  static async getRankingBeneficio({ pagina = 1, itensPorPagina = 10, ordem = 'desc' } = {}) {
+    if (USE_MOCK) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          let dadosFiltrados = [...MOCK_DEPUTADOS].sort((a, b) => {
+            return ordem === 'desc' ? b.indice_eficiencia - a.indice_eficiencia : a.indice_eficiencia - b.indice_eficiencia;
+          });
+          const indexInicio = (pagina - 1) * itensPorPagina;
+          const paginados = dadosFiltrados.slice(indexInicio, indexInicio + itensPorPagina).map(d => ({
+            id_deputado: d.id,
+            deputado: d.name,
+            partido: d.partido,
+            uf: d.uf,
+            total_gasto: d.gastos,
+            indice_eficiencia: d.indice_eficiencia
+          }));
+          resolve(paginados);
+        }, 300);
+      });
+    }
+    
+    return this._fetch('/ranking-beneficio', {
+      method: 'POST',
+      body: JSON.stringify({ pagina, itensPorPagina, ordem })
+    });
+  }
+
   static async getVisaoGeralEscolaridade() {
     if (USE_MOCK) {
       return new Promise((resolve) => setTimeout(() => {
