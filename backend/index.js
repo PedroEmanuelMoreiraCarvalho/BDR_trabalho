@@ -3,7 +3,7 @@ const cors = require('cors');
 const dbAdapter = require('./DatabaseAdapter'); // Importa a nossa nova classe
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000; // changed to avoid port conflict
 
 app.use(cors());
 app.use(express.json());
@@ -176,14 +176,22 @@ async function startServer() {
     // 13.1. Rota POST para pesquisa de deputados por CPF
     app.post('/api/deputados/cpf', async (req, res) => {
       try {
-        const parametros = {
-          pagina: req.body.pagina || 1,
-          itensPorPagina: req.body.itensPorPagina || 10,
-          filtroPartido: req.body.filtroPartido || 'Todos',
-          filtroUF: req.body.filtroUF || 'Todos',
-          cpf: req.body.cpf || ''
+        const cpf = req.body.cpf || '';
+        const pagina = req.body.pagina || 1;
+        const itensPorPagina = req.body.itensPorPagina || 10;
+        const filtroPartido = req.body.filtroPartido || null;
+        const filtroUF = req.body.filtroUF || null;
+
+        // Construir opções de paginação e filtro
+        const options = {
+          partido: filtroPartido,
+          uf: filtroUF,
+          limit: itensPorPagina,
+          offset: (pagina - 1) * itensPorPagina,
+          exactMatch: false // busca por semelhança de prefixo
         };
-        const dados = await dbAdapter.getDeputadosPorCPF(parametros);
+
+        const dados = await dbAdapter.getDeputadosPorCPF(cpf, options);
         res.json(dados);
       } catch (error) {
         console.error('Erro na rota /api/deputados/cpf:', error);

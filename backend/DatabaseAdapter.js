@@ -16,6 +16,8 @@ class DatabaseAdapter {
     try {
       await this.client.connect();
       console.log('✅ DatabaseAdapter: Conectado ao banco de dados com sucesso!');
+      // Ensure unaccent extension is available for accent-insensitive searches
+      await this.client.query('CREATE EXTENSION IF NOT EXISTS unaccent;');
     } catch (error) {
       console.error('❌ DatabaseAdapter: Erro ao conectar ao banco.', error);
       throw error; // Lança o erro para quem chamou a função tratar
@@ -515,14 +517,21 @@ class DatabaseAdapter {
       const params = [];
       let paramIndex = 1;
 
-      // Condição para busca por nome
-      if (exactMatch) {
-        whereClause = `(d.ultimo_status_nome_eleitoral ILIKE $${paramIndex} OR d.nome_civil_deputado ILIKE $${paramIndex})`;
-        params.push(`%${nomePesquisa}%`);
-      } else {
-        whereClause = `(d.ultimo_status_nome_eleitoral ILIKE $${paramIndex} OR d.nome_civil_deputado ILIKE $${paramIndex})`;
-        params.push(`%${nomePesquisa}%`);
-      }
+        // Condição para busca por nome (accent-insensitive)
+        const searchPattern = `%${nomePesquisa}%`;
+        if (exactMatch) {
+          whereClause = `(
+            unaccent(d.ultimo_status_nome_eleitoral) ILIKE unaccent($${paramIndex})
+            OR unaccent(d.nome_civil_deputado) ILIKE unaccent($${paramIndex})
+          )`;
+          params.push(searchPattern);
+        } else {
+          whereClause = `(
+            unaccent(d.ultimo_status_nome_eleitoral) ILIKE unaccent($${paramIndex})
+            OR unaccent(d.nome_civil_deputado) ILIKE unaccent($${paramIndex})
+          )`;
+          params.push(searchPattern);
+        }
       paramIndex++;
 
       // Filtro por partido
@@ -598,34 +607,36 @@ class DatabaseAdapter {
         uf = null,
         limit = 50,
         offset = 0,
-        exactMatch = true  // Para CPF geralmente é busca exata
+        exactMatch = false // Busca por semelhança (prefixo) por padrão
       } = options;
 
       // Remove caracteres não numéricos do CPF
-      const cpfLimpo = String(cpfPesquisa).replace(/\D/g, ''); // Ensure cpfPesquisa is a string
+      const cpfLimpo = String(cpfPesquisa).replace(/\D/g, '');
 
-      if (cpfLimpo.length !== 11) {
-        throw new Error('CPF inválido. Deve conter 11 dígitos.');
+      if (!cpfLimpo) {
+        // If no CPF provided, return empty result set
+        return {
+          total: 0,
+          limit,
+          offset,
+          cpf_pesquisado: '',
+          results: []
+        };
       }
 
       let whereClause = '';
       const params = [];
       let paramIndex = 1;
 
-      // Condição para busca por CPF
+      // Condição para busca por CPF (sempre usando LIKE para prefixo)
       if (exactMatch) {
+        // Caso o usuário queira correspondência exata
         whereClause = `d.cpf_deputado = $${paramIndex}`;
         params.push(cpfLimpo);
       } else {
-        // Se o CPF fornecido for menor que 11 dígitos, buscar por prefixo
-        if (cpfLimpo.length < 11) {
-          whereClause = `d.cpf_deputado LIKE $${paramIndex}`;
-          params.push(`${cpfLimpo}%`);
-        } else {
-          // Busca contendo o CPF em qualquer posição
-          whereClause = `d.cpf_deputado LIKE $${paramIndex}`;
-          params.push(`%${cpfLimpo}%`);
-        }
+        // Busca por prefixo: qualquer CPF que comece com os dígitos fornecidos
+        whereClause = `d.cpf_deputado LIKE $${paramIndex}`;
+        params.push(`${cpfLimpo}%`);
       }
       paramIndex++;
 
