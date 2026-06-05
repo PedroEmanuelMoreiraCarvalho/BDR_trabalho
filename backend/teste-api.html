@@ -1,29 +1,150 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Testador de API - Backend</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: monospace; background: #0f1117; color: #e0e0e0; padding: 24px; }
-    h1 { color: #7c3aed; margin-bottom: 24px; font-size: 1.4rem; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
-    .card { background: #1a1d2e; border: 1px solid #2a2d3e; border-radius: 10px; padding: 16px; }
-    .card h3 { color: #a78bfa; font-size: 0.85rem; margin-bottom: 4px; }
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-bottom: 10px; }
-    .get  { background: #064e3b; color: #34d399; }
-    .post { background: #1e3a5f; color: #60a5fa; }
-    .url { font-size: 0.78rem; color: #94a3b8; margin-bottom: 10px; word-break: break-all; }
-    .fields { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
-    .fields input { background: #0f1117; border: 1px solid #374151; border-radius: 6px; padding: 5px 8px; color: #e0e0e0; font-size: 0.8rem; font-family: monospace; }
-    .fields input::placeholder { color: #4b5563; }
-    button { width: 100%; padding: 8px; border: none; border-radius: 6px; background: #7c3aed; color: white; font-weight: bold; cursor: pointer; font-size: 0.82rem; transition: background 0.2s; }
-    button:hover { background: #6d28d9; }
-    button:disabled { background: #374151; cursor: not-allowed; }
-    pre { background: #0f1117; border: 1px solid #2a2d3e; border-radius: 6px; padding: 10px; margin-top: 10px; font-size: 0.72rem; max-height: 220px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; color: #86efac; display: none; }
-    .error { color: #f87171; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: monospace;
+      background: #0f1117;
+      color: #e0e0e0;
+      padding: 24px;
+    }
+
+    h1 {
+      color: #7c3aed;
+      margin-bottom: 24px;
+      font-size: 1.4rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: #1a1d2e;
+      border: 1px solid #2a2d3e;
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .card h3 {
+      color: #a78bfa;
+      font-size: 0.85rem;
+      margin-bottom: 4px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .get {
+      background: #064e3b;
+      color: #34d399;
+    }
+
+    .post {
+      background: #1e3a5f;
+      color: #60a5fa;
+    }
+
+    .url {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      margin-bottom: 10px;
+      word-break: break-all;
+    }
+
+    .fields {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .fields input,
+    .fields select {
+      background: #0f1117;
+      border: 1px solid #374151;
+      border-radius: 6px;
+      padding: 5px 8px;
+      color: #e0e0e0;
+      font-size: 0.8rem;
+      font-family: monospace;
+    }
+
+    .fields input::placeholder {
+      color: #4b5563;
+    }
+
+    button {
+      width: 100%;
+      padding: 8px;
+      border: none;
+      border-radius: 6px;
+      background: #7c3aed;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.82rem;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #6d28d9;
+    }
+
+    button:disabled {
+      background: #374151;
+      cursor: not-allowed;
+    }
+
+    pre {
+      background: #0f1117;
+      border: 1px solid #2a2d3e;
+      border-radius: 6px;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 0.72rem;
+      max-height: 220px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #86efac;
+      display: none;
+    }
+
+    .error {
+      color: #f87171;
+    }
+
+    .info-badge {
+      display: inline-block;
+      background: #2a2d3e;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      margin-left: 8px;
+      color: #94a3b8;
+    }
   </style>
 </head>
+
 <body>
   <h1>🔌 Testador de API — Backend (localhost:3000)</h1>
   <div class="grid" id="grid"></div>
@@ -76,12 +197,12 @@
         metodo: 'POST',
         path: '/api/ranking',
         campos: [
-          { key: 'pagina',        placeholder: 'pagina (ex: 1)',               default: '1' },
-          { key: 'itensPorPagina',placeholder: 'itensPorPagina (ex: 5)',        default: '5' },
-          { key: 'filtroPartido', placeholder: 'filtroPartido (ex: PT ou Todos)',default: 'Todos' },
-          { key: 'filtroUF',      placeholder: 'filtroUF (ex: SP ou Todos)',     default: 'Todos' },
-          { key: 'metrica',       placeholder: 'metrica (eficiencia ou gastos)', default: 'gastos' },
-          { key: 'ordem',         placeholder: 'ordem (asc ou desc)',            default: 'desc' },
+          { key: 'pagina', placeholder: 'pagina (ex: 1)', default: '1' },
+          { key: 'itensPorPagina', placeholder: 'itensPorPagina (ex: 5)', default: '5' },
+          { key: 'filtroPartido', placeholder: 'filtroPartido (ex: PT ou Todos)', default: 'Todos' },
+          { key: 'filtroUF', placeholder: 'filtroUF (ex: SP ou Todos)', default: 'Todos' },
+          { key: 'metrica', placeholder: 'metrica (eficiencia ou gastos)', default: 'gastos' },
+          { key: 'ordem', placeholder: 'ordem (asc ou desc)', default: 'desc' },
         ]
       },
       {
@@ -121,11 +242,31 @@
         metodo: 'POST',
         path: '/api/deputados/{id}/votacoes',
         campos: [
-          { key: 'id',            placeholder: 'ID do deputado',               default: '204554' },
-          { key: 'pagina',        placeholder: 'pagina (ex: 1)',                default: '1' },
-          { key: 'itensPorPagina',placeholder: 'itensPorPagina (ex: 5)',        default: '5' },
-          { key: 'filtroTema',    placeholder: 'filtroTema (ex: Todos)',         default: 'Todos' },
-          { key: 'busca',         placeholder: 'busca (texto livre)',            default: '' },
+          { key: 'id', placeholder: 'ID do deputado', default: '204554' },
+          { key: 'pagina', placeholder: 'pagina (ex: 1)', default: '1' },
+          { key: 'itensPorPagina', placeholder: 'itensPorPagina (ex: 5)', default: '5' },
+          { key: 'filtroTema', placeholder: 'filtroTema (ex: Todos)', default: 'Todos' },
+          { key: 'busca', placeholder: 'busca (texto livre)', default: '' },
+        ]
+      },
+      {
+        nome: '🔍 Pesquisa Deputados por Nome',
+        metodo: 'POST',
+        path: '/api/deputados/pesquisa',
+        campos: [
+          { key: 'nome', placeholder: 'Nome do deputado (ex: Silva)', default: 'Silva' },
+        ]
+      },
+      {
+        nome: '🔍 Pesquisa Deputados por CPF',
+        metodo: 'POST',
+        path: '/api/deputados/cpf',
+        campos: [
+          { key: 'cpf', placeholder: 'CPF (ex: 12345678900 ou 123.456.789-00)', default: '' },
+          { key: 'pagina', placeholder: 'pagina (ex: 1)', default: '1' },
+          { key: 'itensPorPagina', placeholder: 'itensPorPagina (ex: 10)', default: '10' },
+          { key: 'filtroPartido', placeholder: 'filtroPartido (ex: PT ou Todos)', default: 'Todos' },
+          { key: 'filtroUF', placeholder: 'filtroUF (ex: SP ou Todos)', default: 'Todos' },
         ]
       },
     ];
@@ -145,7 +286,7 @@
         <div class="url" id="${urlId}">${BASE}${rota.path}</div>
         <div class="fields" id="fields-${i}">
           ${(rota.campos || []).map(c => `
-            <input data-key="${c.key}" placeholder="${c.placeholder}" value="${c.default}" />
+            <input data-key="${c.key}" placeholder="${c.placeholder}" value="${c.default || ''}" />
           `).join('')}
         </div>
         <button onclick="chamar(${i})">▶ Executar</button>
@@ -158,7 +299,7 @@
     async function chamar(i) {
       const rota = rotas[i];
       const pre = document.getElementById(`pre-${i}`);
-      const btn = document.querySelector(`#grid .card:nth-child(${i+1}) button`);
+      const btn = document.querySelector(`#grid .card:nth-child(${i + 1}) button`);
       const inputs = document.querySelectorAll(`#fields-${i} input`);
 
       // Lê os valores dos inputs
@@ -175,6 +316,17 @@
       delete body.id;
       delete body.sigla;
 
+      // Para CPF, limpa a formatação antes de enviar
+      if (rota.path === '/api/deputados/cpf' && body.cpf) {
+        body.cpf = body.cpf.replace(/\D/g, '');
+      }
+
+      // Remove campos vazios ou com valor padrão 'Todos' quando apropriado
+      if (rota.path === '/api/deputados/cpf') {
+        if (body.filtroPartido === 'Todos') delete body.filtroPartido;
+        if (body.filtroUF === 'Todos') delete body.filtroUF;
+      }
+
       pre.style.display = 'block';
       pre.className = '';
       pre.textContent = '⏳ Buscando...';
@@ -190,7 +342,36 @@
         const resp = await fetch(url, opts);
         const json = await resp.json();
 
-        pre.textContent = JSON.stringify(json, null, 2);
+        // Formata a saída para melhor visualização
+        let outputText = JSON.stringify(json, null, 2);
+
+        // Adiciona informações adicionais para a rota de CPF
+        if (rota.path === '/api/deputados/cpf' && json.results) {
+          outputText += '\n\n📊 RESUMO:\n';
+          outputText += `Total de resultados: ${json.total}\n`;
+          outputText += `Página: ${json.pagina || 1}\n`;
+          outputText += `Itens por página: ${json.itensPorPagina || 10}\n`;
+          if (json.cpf_pesquisado) {
+            outputText += `CPF pesquisado: ${json.cpf_pesquisado}\n`;
+          }
+        }
+
+        // Adiciona informações adicionais para a rota de pesquisa por nome
+        if (rota.path === '/api/deputados/pesquisa' && Array.isArray(json)) {
+          outputText += '\n\n📊 RESUMO:\n';
+          outputText += `Total de deputados encontrados: ${json.length}\n`;
+          if (json.length > 0) {
+            outputText += `\n📋 LISTA RÁPIDA:\n`;
+            json.slice(0, 5).forEach((dep, idx) => {
+              outputText += `${idx + 1}. ${dep.nome} (${dep.partido}/${dep.uf})\n`;
+            });
+            if (json.length > 5) {
+              outputText += `... e mais ${json.length - 5} deputados\n`;
+            }
+          }
+        }
+
+        pre.textContent = outputText;
         if (!resp.ok) pre.className = 'error';
       } catch (err) {
         pre.className = 'error';
@@ -199,6 +380,10 @@
         btn.disabled = false;
       }
     }
+
+    // Função global para ser chamada pelo onclick
+    window.chamar = chamar;
   </script>
 </body>
+
 </html>

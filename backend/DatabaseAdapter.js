@@ -500,6 +500,215 @@ class DatabaseAdapter {
     }
   }
 
+  // Retorna pesqusia de deputados pelo nome:
+  async getDeputadosPorNome(nomePesquisa, options = {}) {
+    try {
+      const {
+        partido = null,
+        uf = null,
+        limit = 50,
+        offset = 0,
+        exactMatch = false
+      } = options;
+
+      let whereClause = '';
+      const params = [];
+      let paramIndex = 1;
+
+      // Condição para busca por nome
+      if (exactMatch) {
+        whereClause = `(d.ultimo_status_nome_eleitoral ILIKE $${paramIndex} OR d.nome_civil_deputado ILIKE $${paramIndex})`;
+        params.push(`%${nomePesquisa}%`);
+      } else {
+        whereClause = `(d.ultimo_status_nome_eleitoral ILIKE $${paramIndex} OR d.nome_civil_deputado ILIKE $${paramIndex})`;
+        params.push(`%${nomePesquisa}%`);
+      }
+      paramIndex++;
+
+      // Filtro por partido
+      if (partido) {
+        whereClause += ` AND d.ultimo_status_sigla_partido = $${paramIndex}`;
+        params.push(partido.toUpperCase());
+        paramIndex++;
+      }
+
+      // Filtro por UF
+      if (uf) {
+        whereClause += ` AND d.ultimo_status_sigla_uf = $${paramIndex}`;
+        params.push(uf.toUpperCase());
+        paramIndex++;
+      }
+
+      const query = `
+        SELECT 
+          d.ultimo_status_nome_eleitoral AS nome,
+          d.nome_civil_deputado AS nome_civil,
+          d.ultimo_status_sigla_partido AS partido,
+          d.ultimo_status_sigla_uf AS uf,
+          d.ultimo_status_url_foto AS url_perfil,
+          d.id_deputado,
+          d.ultimo_status_situacao AS situacao,
+          d.ultimo_status_condicao_eleitoral AS condicao_eleitoral
+        FROM deputados d
+        WHERE ${whereClause}
+          AND d.ultimo_status_situacao = 'Exercício'  -- Filtra apenas deputados em exercício
+        ORDER BY d.ultimo_status_nome_eleitoral
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+      `;
+
+      params.push(limit, offset);
+      const result = await this.client.query(query, params);
+
+      // Query para contar total de resultados (para paginação)
+      const countQuery = `
+        SELECT COUNT(*) as total
+        FROM deputados d
+        WHERE ${whereClause}
+          AND d.ultimo_status_situacao = 'Exercício'
+      `;
+
+      const countResult = await this.client.query(countQuery, params.slice(0, -2));
+
+      return {
+        total: parseInt(countResult.rows[0].total),
+        limit,
+        offset,
+        results: result.rows.map(row => ({
+          id: row.id_deputado,
+          nome: row.nome,
+          nome_civil: row.nome_civil,
+          partido: row.partido,
+          uf: row.uf,
+          url_perfil: row.url_perfil,
+          situacao: row.situacao,
+          condicao_eleitoral: row.condicao_eleitoral
+        }))
+      };
+    } catch (error) {
+      console.error('Erro na query getDeputadosPorNome:', error);
+      throw error;
+    }
+  }
+
+  //retorna deputado por pesquisa de cpf
+  async getDeputadosPorCPF(cpfPesquisa, options = {}) {
+    try {
+      const {
+        partido = null,
+        uf = null,
+        limit = 50,
+        offset = 0,
+        exactMatch = true  // Para CPF geralmente é busca exata
+      } = options;
+
+      // Remove caracteres não numéricos do CPF
+      const cpfLimpo = String(cpfPesquisa).replace(/\D/g, ''); // Ensure cpfPesquisa is a string
+
+      if (cpfLimpo.length !== 11) {
+        throw new Error('CPF inválido. Deve conter 11 dígitos.');
+      }
+
+      let whereClause = '';
+      const params = [];
+      let paramIndex = 1;
+
+      // Condição para busca por CPF
+      if (exactMatch) {
+        whereClause = `d.cpf_deputado = $${paramIndex}`;
+        params.push(cpfLimpo);
+      } else {
+        // Se o CPF fornecido for menor que 11 dígitos, buscar por prefixo
+        if (cpfLimpo.length < 11) {
+          whereClause = `d.cpf_deputado LIKE $${paramIndex}`;
+          params.push(`${cpfLimpo}%`);
+        } else {
+          // Busca contendo o CPF em qualquer posição
+          whereClause = `d.cpf_deputado LIKE $${paramIndex}`;
+          params.push(`%${cpfLimpo}%`);
+        }
+      }
+      paramIndex++;
+
+      // Filtro por partido
+      if (partido) {
+        whereClause += ` AND d.ultimo_status_sigla_partido = $${paramIndex}`;
+        params.push(partido.toUpperCase());
+        paramIndex++;
+      }
+
+      // Filtro por UF
+      if (uf) {
+        whereClause += ` AND d.ultimo_status_sigla_uf = $${paramIndex}`;
+        params.push(uf.toUpperCase());
+        paramIndex++;
+      }
+
+      const query = `
+        SELECT 
+          d.id_deputado,
+          d.cpf_deputado AS cpf,
+          d.ultimo_status_nome_eleitoral AS nome,
+          d.nome_civil_deputado AS nome_civil,
+          d.ultimo_status_sigla_partido AS partido,
+          d.ultimo_status_sigla_uf AS uf,
+          d.ultimo_status_url_foto AS url_perfil,
+          d.sexo_deputado AS sexo,
+          d.data_nascimento_deputado AS data_nascimento,
+          d.escolaridade_deputado AS escolaridade,
+          d.ultimo_status_situacao AS situacao,
+          d.ultimo_status_condicao_eleitoral AS condicao_eleitoral,
+          d.uri_deputado AS uri
+        FROM deputados d
+        WHERE ${whereClause}
+        ORDER BY d.ultimo_status_nome_eleitoral
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+      `;
+
+      params.push(limit, offset);
+      const result = await this.client.query(query, params);
+
+      // Query para contar total de resultados (para paginação)
+      const countQuery = `
+        SELECT COUNT(*) as total
+        FROM deputados d
+        WHERE ${whereClause}
+      `;
+
+      const countResult = await this.client.query(countQuery, params.slice(0, -2));
+
+      // Formata o CPF para exibição (opcional)
+      const formatarCPF = (cpf) => {
+        if (!cpf || cpf.length !== 11) return cpf;
+        return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+      };
+
+      return {
+        total: parseInt(countResult.rows[0].total),
+        limit,
+        offset,
+        cpf_pesquisado: formatarCPF(cpfLimpo),
+        results: result.rows.map(row => ({
+          id: row.id_deputado,
+          cpf: formatarCPF(row.cpf),
+          cpf_numerico: row.cpf, // CPF sem formatação para uso em outras consultas
+          nome: row.nome,
+          nome_civil: row.nome_civil,
+          partido: row.partido,
+          uf: row.uf,
+          url_perfil: row.url_perfil,
+          sexo: row.sexo,
+          data_nascimento: row.data_nascimento,
+          escolaridade: row.escolaridade,
+          situacao: row.situacao,
+          condicao_eleitoral: row.condicao_eleitoral,
+          uri: row.uri
+        }))
+      };
+    } catch (error) {
+      console.error('Erro na query getDeputadosPorCPF:', error);
+      throw error;
+    }
+  }
 }
 
 // Exportamos uma única instância (Padrão Singleton) para ser reaproveitada
