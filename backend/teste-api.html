@@ -227,6 +227,22 @@
         ]
       },
       {
+        nome: 'Desempenho e Presença do Deputado',
+        metodo: 'GET',
+        path: '/api/deputados/{id}/desempenho',
+        campos: [
+          { key: 'id', placeholder: 'ID do deputado', default: '204554' },
+        ]
+      },
+      {
+        nome: 'Posição no Ranking de Benefício',
+        metodo: 'GET',
+        path: '/api/deputados/{id}/ranking-position',
+        campos: [
+          { key: 'id', placeholder: 'ID do deputado', default: '204554' },
+        ]
+      },
+      {
         nome: 'Nuvem de Palavras do Deputado',
         metodo: 'GET',
         path: '/api/deputados/{id}/nuvem',

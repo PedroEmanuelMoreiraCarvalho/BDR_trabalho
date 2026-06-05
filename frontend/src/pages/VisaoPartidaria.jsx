@@ -12,6 +12,12 @@ const VisaoPartidaria = () => {
   const [partidoSelecionado, setPartidoSelecionado] = useState('PL');
   const [dataNuvem, setDataNuvem] = useState([]);
 
+  // Pega as top 15 palavras e as embaralha para não ficarem em cascata.
+  // O useMemo garante que só re-embaralhe quando vier dados novos (evita piscar no hover)
+  const palavrasEmbaralhadas = useMemo(() => {
+    return [...dataNuvem.slice(0, 15)].sort(() => Math.random() - 0.5);
+  }, [dataNuvem]);
+
   // ==========================================
   // SIMULAÇÃO DE CHAMADA À API (useEffect)
   // ==========================================
@@ -56,7 +62,7 @@ const VisaoPartidaria = () => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       let valDisplay = data[metric];
-      if (metric === 'gastos') valDisplay = `R$ ${(data[metric]/1000000).toFixed(1)} Milhões`;
+      if (metric === 'gastos') valDisplay = `R$ ${(data[metric] / 1000000).toFixed(1)} Milhões`;
       if (metric === 'frequencia') valDisplay = `${data[metric].toFixed(1)}%`;
 
       const metricLabel = {
@@ -80,7 +86,7 @@ const VisaoPartidaria = () => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       const naoAlinhados = data.total_considerado - data.total_alinhado;
-      
+
       return (
         <div style={{ backgroundColor: '#1f2937', padding: '12px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f9fafb' }}>
           <p style={{ fontWeight: 'bold', marginBottom: '8px', color: 'var(--text-primary)' }}>Partido: {data.partido}</p>
@@ -108,7 +114,7 @@ const VisaoPartidaria = () => {
   }, [partidoSelecionado]);
 
   const renderWordCloud = () => {
-    const palavras = dataNuvem;
+    const palavras = palavrasEmbaralhadas;
     if (palavras.length === 0) return null;
     const maxVal = Math.max(...palavras.map(w => w.value));
     const minVal = Math.min(...palavras.map(w => w.value));
@@ -147,27 +153,26 @@ const VisaoPartidaria = () => {
         </div>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px', marginBottom: '24px' }}>
-        
-        {/* Alinhamento Interno dos Partidos */}
+      {/* Alinhamento Interno dos Partidos */}
+      <div style={{ marginBottom: '24px' }}>
         <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
           <h2 style={{ marginBottom: '8px', fontSize: '1.25rem' }}>Alinhamento Interno</h2>
           <p className="text-secondary" style={{ marginBottom: '24px', fontSize: '0.875rem' }}>
             Qual porcentagem dos votos seguiu a orientação oficial.
           </p>
-          
-          <div style={{ flex: 1, width: '100%', minHeight: 400 }}>
+
+          <div style={{ width: '100%', height: Math.max(400, dataAlinhamento.length * 35) }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart 
-                data={dataAlinhamento} 
-                layout="vertical" 
+              <BarChart
+                data={dataAlinhamento}
+                layout="vertical"
                 margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" horizontal={true} vertical={false} />
-                <XAxis type="number" domain={[0, 100]} stroke="#9ca3af" tick={{fill: '#9ca3af', fontSize: 12}} unit="%" />
-                <YAxis dataKey="partido" type="category" stroke="#9ca3af" tick={{fill: '#9ca3af', fontSize: 12, fontWeight: 500}} width={100} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} cursor={{fill: 'rgba(255,255,255,0.05)'}} />
-                
+                <XAxis type="number" domain={[0, 100]} stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} unit="%" />
+                <YAxis dataKey="partido" type="category" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12, fontWeight: 500 }} width={100} axisLine={false} tickLine={false} interval={0} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+
                 <Bar dataKey="perc_alinhamento" radius={[0, 4, 4, 0]}>
                   {dataAlinhamento.map((entry, index) => {
                     let color = '#ef4444';
@@ -180,8 +185,10 @@ const VisaoPartidaria = () => {
             </ResponsiveContainer>
           </div>
         </div>
+      </div>
 
-        {/* Nuvem de Palavras por Partido */}
+      {/* Nuvem de Palavras por Partido */}
+      <div style={{ marginBottom: '24px' }}>
         <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
             <div>
@@ -235,14 +242,14 @@ const VisaoPartidaria = () => {
 
         <div style={{ width: '100%', height: 400 }}>
           <ResponsiveContainer>
-            <BarChart 
-              data={dataComparacaoSorted} 
+            <BarChart
+              data={dataComparacaoSorted}
               margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
-              <XAxis dataKey="partido" stroke="#9ca3af" tick={{fill: '#9ca3af', fontSize: 12}} axisLine={false} tickLine={false} />
-              <YAxis stroke="#9ca3af" tick={{fill: '#9ca3af', fontSize: 12}} axisLine={false} tickLine={false} tickFormatter={formatComparacaoYAxis} />
-              <Tooltip content={<CustomComparacaoTooltip metric={comparacaoMetric} />} cursor={{fill: 'rgba(255,255,255,0.05)'}} />
+              <XAxis dataKey="partido" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={formatComparacaoYAxis} />
+              <Tooltip content={<CustomComparacaoTooltip metric={comparacaoMetric} />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
               <Bar dataKey={comparacaoMetric} radius={[4, 4, 0, 0]}>
                 {dataComparacaoSorted.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS_COMPARACAO[index % COLORS_COMPARACAO.length]} />

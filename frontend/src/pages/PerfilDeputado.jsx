@@ -8,7 +8,14 @@ const PerfilDeputado = () => {
   const { id } = useParams();
 
   const [perfil, setPerfil] = useState(null);
+  const [desempenho, setDesempenho] = useState(null);
+  const [rankingPosition, setRankingPosition] = useState(null);
   const [nuvemPalavras, setNuvemPalavras] = useState([]);
+
+  // Embaralha as 15 principais palavras para a nuvem de palavras
+  const palavrasEmbaralhadas = useMemo(() => {
+    return [...nuvemPalavras.slice(0, 10)].sort(() => Math.random() - 0.5);
+  }, [nuvemPalavras]);
   const [gastosTipo, setGastosTipo] = useState([]);
   const [fornecedores, setFornecedores] = useState([]);
   const [votacoes, setVotacoes] = useState([]);
@@ -27,6 +34,12 @@ const PerfilDeputado = () => {
       try {
         const perfilData = await DashboardAdapter.getPerfilDeputado(id);
         setPerfil(perfilData);
+
+        const desempenhoData = await DashboardAdapter.getPerfilDesempenho(id);
+        setDesempenho(desempenhoData);
+
+        const rankingData = await DashboardAdapter.getBeneficioRankingPosition(id);
+        setRankingPosition(rankingData);
 
         const nuvemData = await DashboardAdapter.getPerfilNuvemPalavras(id);
         setNuvemPalavras(nuvemData);
@@ -62,7 +75,7 @@ const PerfilDeputado = () => {
         console.error("Erro ao buscar votações:", error);
       }
     };
-    
+
     fetchVotacoes();
   }, [id, paginaAtual, filtroTema, buscaVotacao]);
 
@@ -79,13 +92,14 @@ const PerfilDeputado = () => {
   const COLORS_PIE = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
 
   const renderMockWordCloud = () => {
-    if (nuvemPalavras.length === 0) return null;
-    const maxVal = Math.max(...nuvemPalavras.map(w => w.value));
-    const minVal = Math.min(...nuvemPalavras.map(w => w.value));
+    const palavras = palavrasEmbaralhadas;
+    if (palavras.length === 0) return null;
+    const maxVal = Math.max(...palavras.map(w => w.value));
+    const minVal = Math.min(...palavras.map(w => w.value));
 
     return (
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center', alignItems: 'center', padding: '16px' }}>
-        {nuvemPalavras.map((word, i) => {
+        {palavras.map((word, i) => {
           const size = 14 + ((word.value - minVal) / (maxVal - minVal)) * 36;
           return (
             <span
@@ -112,10 +126,10 @@ const PerfilDeputado = () => {
 
   const { gastosProcessados, valorTotalGastos } = useMemo(() => {
     if (!gastosTipo || gastosTipo.length === 0) return { gastosProcessados: [], valorTotalGastos: 0 };
-    
+
     const total = gastosTipo.reduce((acc, curr) => acc + curr.total_gasto, 0);
     const sorted = [...gastosTipo].sort((a, b) => b.total_gasto - a.total_gasto);
-    
+
     let processed = [];
     if (sorted.length > 5) {
       processed = sorted.slice(0, 5);
@@ -149,46 +163,54 @@ const PerfilDeputado = () => {
 
       <div className="glass-card" style={{ padding: '40px 32px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '32px' }}>
         <div style={{ width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
-          {perfil.foto ? (
-            <img src={perfil.foto} alt={`Foto de ${perfil.nome}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          {perfil.url_foto_perfil ? (
+            <img src={perfil.url_foto_perfil} alt={`Foto de ${perfil.nome}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
             <UserIcon size={64} style={{ color: 'var(--text-secondary)' }} />
           )}
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <h1 style={{ fontSize: '2.5rem', margin: 0, lineHeight: 1.2 }}>{perfil.nome}</h1>
-            
-            {perfil.indice_eficiencia !== undefined && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', textAlign: 'right' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
-                <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Índice de Eficiência</span>
-                <div onMouseEnter={() => setShowInfo(true)} onMouseLeave={() => setShowInfo(false)} style={{ cursor: 'pointer', color: 'var(--text-muted)' }}>
-                  <Info size={16} />
-                </div>
-                {showInfo && (
-                  <div style={{ position: 'absolute', top: '100%', right: '0px', marginTop: '8px', zIndex: 50, width: '320px', padding: '12px', background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)', color: '#f9fafb', fontSize: '0.875rem', lineHeight: '1.4', textAlign: 'left' }}>
-                    <strong>Índice de Eficiência (0 a 10)</strong><br/>
-                    Avalia o Custo-Benefício do deputado baseando-se em:
-                    <ul style={{ paddingLeft: '16px', margin: '8px 0 0 0' }}>
-                      <li><strong>Projetos de Lei:</strong> Maior peso para PECs, projetos aprovados e autoria principal.</li>
-                      <li><strong>Assiduidade:</strong> Presença em Plenário e Comissões.</li>
-                      <li><strong>Gastos:</strong> Deputados com alta produção e baixo custo recebem os melhores scores.</li>
-                    </ul>
-                  </div>
-                )}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginTop: '4px' }}>
-                <span style={{ fontSize: '2rem', fontWeight: 'bold', color: perfil.indice_eficiencia >= 5 ? '#10b981' : '#ef4444' }}>{perfil.indice_eficiencia}</span>
-                <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>/ 10</span>
-              </div>
-              <div style={{ fontSize: '0.75rem', color: (perfil.posicao_ranking / perfil.total_deputados) <= 0.5 ? '#10b981' : '#ef4444', marginTop: '2px', fontWeight: '500' }}>
-                {calcularPercentualRanking(perfil.posicao_ranking, perfil.total_deputados)}
-              </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <h1 style={{ fontSize: '2.5rem', margin: 0, lineHeight: 1.2 }}>{perfil.nome}</h1>
+              {perfil.nome_civil && (
+                <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginTop: '4px', textTransform: 'capitalize' }}>
+                  {perfil.nome_civil.toLowerCase()}
+                </span>
+              )}
             </div>
-          )}
+
+            {perfil.indice_eficiencia !== undefined && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', textAlign: 'right' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
+                  <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Score de Eficiência</span>
+                  <div onMouseEnter={() => setShowInfo(true)} onMouseLeave={() => setShowInfo(false)} style={{ cursor: 'pointer', color: 'var(--text-muted)' }}>
+                    <Info size={16} />
+                  </div>
+                  {showInfo && (
+                    <div style={{ position: 'absolute', top: '100%', right: '0px', marginTop: '8px', zIndex: 50, width: '320px', padding: '12px', background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)', color: '#f9fafb', fontSize: '0.875rem', lineHeight: '1.4', textAlign: 'left' }}>
+                      <strong>Score de Eficiência Absoluto</strong><br />
+                      Avalia o Custo-Benefício do deputado baseando-se em:
+                      <ul style={{ paddingLeft: '16px', margin: '8px 0 0 0' }}>
+                        <li><strong>Projetos de Lei:</strong> Maior peso para PECs, projetos aprovados e autoria principal.</li>
+                        <li><strong>Assiduidade:</strong> Presença em Plenário e Comissões.</li>
+                        <li><strong>Gastos:</strong> Deputados com alta produção e baixo custo recebem os melhores scores.</li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginTop: '4px' }}>
+                  <span style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>
+                    {desempenho ? Number(desempenho.indice_eficiencia).toLocaleString('pt-BR', { maximumFractionDigits: 4 }) : 'Carregando...'}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: (rankingPosition && (rankingPosition.posicao / rankingPosition.total) <= 0.5) ? '#10b981' : '#ef4444', marginTop: '2px', fontWeight: '500' }}>
+                  {rankingPosition ? calcularPercentualRanking(rankingPosition.posicao, rankingPosition.total) : ''}
+                </div>
+              </div>
+            )}
           </div>
-          
+
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '32px', color: 'var(--text-secondary)' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -206,7 +228,7 @@ const PerfilDeputado = () => {
                 <BookOpen size={16} /> {perfil.escolaridade}
               </span>
             </div>
-            
+
             <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)', display: 'block' }}></div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -224,19 +246,80 @@ const PerfilDeputado = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px', marginBottom: '24px' }}>
-        <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Eixo de Atuação (Palavras-chave)</h2>
-          <p className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '16px' }}>
-            Baseado nos temas e palavras-chave extraídas das ementas das proposições de autoria do deputado.
-          </p>
-          <div style={{ flex: 1, minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: '100%', height: '100%' }}>
-              {renderMockWordCloud()}
+      {desempenho && (
+        <div style={{ marginBottom: '24px' }}>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '16px' }}>Métricas de Desempenho e Presença</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' }}>
+
+            {/* Score de Proposições */}
+            <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>Pontuação de Proposições</span>
+              <span className="text-gradient" style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '4px' }}>
+                {Number(desempenho.score_proposicoes).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
+              </span>
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                Baseado em {desempenho.total_proposicoes} proposições
+              </span>
             </div>
+
+            {/* Fator de Atividade */}
+            <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>Fator de Atividade</span>
+              <span className="text-gradient" style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '4px' }}>
+                {Number(desempenho.fator_atividade).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
+              </span>
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                Produtividade comparada à média
+              </span>
+            </div>
+
+            {/* Presença em Plenário */}
+            <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>Presença no Plenário</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '12px' }}>
+                <span style={{ fontSize: '2rem', fontWeight: 700, color: desempenho.plenario_pct_presenca >= 80 ? '#10b981' : (desempenho.plenario_pct_presenca >= 50 ? '#f59e0b' : '#ef4444') }}>
+                  {Number(desempenho.plenario_pct_presenca).toFixed(1)}%
+                </span>
+                <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>({desempenho.plenario_presencas} sessões)</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Ausências Justificadas:</span>
+                  <span style={{ color: '#f9fafb', fontWeight: 500 }}>{desempenho.plenario_ausencias_justificadas}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Ausências Não Justificadas:</span>
+                  <span style={{ color: desempenho.plenario_ausencias_nao_justificadas > 0 ? '#ef4444' : '#10b981', fontWeight: 500 }}>{desempenho.plenario_ausencias_nao_justificadas}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Presença em Comissões */}
+            <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>Presença em Comissões</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '12px' }}>
+                <span style={{ fontSize: '2rem', fontWeight: 700, color: desempenho.comissoes_pct_presenca >= 80 ? '#10b981' : (desempenho.comissoes_pct_presenca >= 50 ? '#f59e0b' : '#ef4444') }}>
+                  {Number(desempenho.comissoes_pct_presenca).toFixed(1)}%
+                </span>
+                <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>({desempenho.comissoes_presencas} sessões)</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Ausências Justificadas:</span>
+                  <span style={{ color: '#f9fafb', fontWeight: 500 }}>{desempenho.comissoes_ausencias_justificadas}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Ausências Não Justificadas:</span>
+                  <span style={{ color: desempenho.comissoes_ausencias_nao_justificadas > 0 ? '#ef4444' : '#10b981', fontWeight: 500 }}>{desempenho.comissoes_ausencias_nao_justificadas}</span>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
+      )}
 
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px', marginBottom: '24px' }}>
         <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
           <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Com o que o deputado mais gasta?</h2>
           <div style={{ marginBottom: '24px' }}>
@@ -247,7 +330,7 @@ const PerfilDeputado = () => {
               R$ {valorTotalGastos.toLocaleString('pt-BR')}
             </span>
           </div>
-          
+
           <div style={{ display: 'flex', flexWrap: 'wrap', flex: 1, minHeight: '250px', alignItems: 'center', gap: '24px' }}>
             <div style={{ flex: '1 1 200px', height: '250px' }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -300,6 +383,18 @@ const PerfilDeputado = () => {
             </div>
           </div>
         </div>
+
+        <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Eixo de Atuação (Palavras-chave)</h2>
+          <p className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '16px' }}>
+            Baseado nos temas e palavras-chave extraídas das ementas das proposições de autoria do deputado.
+          </p>
+          <div style={{ flex: 1, minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '100%', height: '100%' }}>
+              {renderMockWordCloud()}
+            </div>
+          </div>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
@@ -339,11 +434,11 @@ const PerfilDeputado = () => {
               <p className="text-secondary" style={{ fontSize: '0.875rem' }}>Como o deputado votou recentemente.</p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <input 
-                type="text" 
-                placeholder="Buscar (ex: PL 1234)" 
-                value={buscaVotacao} 
-                onChange={e => { setBuscaVotacao(e.target.value); setPaginaAtual(1); }} 
+              <input
+                type="text"
+                placeholder="Buscar (ex: PL 1234)"
+                value={buscaVotacao}
+                onChange={e => { setBuscaVotacao(e.target.value); setPaginaAtual(1); }}
                 style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '6px 12px', borderRadius: '8px', outline: 'none', fontSize: '0.875rem', minWidth: '150px' }}
               />
               {/* Filtro por Tema */}
@@ -379,10 +474,10 @@ const PerfilDeputado = () => {
                     </span>
                   </div>
                   <p style={{ margin: 0, fontWeight: 500, color: 'var(--text-primary)', fontSize: '0.9rem' }}>{voto.descricao}</p>
-                  
+
                   {voto.ementa && (
                     <div style={{ marginTop: '8px' }}>
-                      <button 
+                      <button
                         onClick={() => setEmentaExpandida(ementaExpandida === voto.id ? null : voto.id)}
                         style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: '0.8rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
                       >
@@ -405,19 +500,19 @@ const PerfilDeputado = () => {
           {/* Paginação */}
           {totalPaginas > 1 && (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-              <button 
+              <button
                 onClick={() => setPaginaAtual(prev => Math.max(prev - 1, 1))}
                 disabled={paginaAtual === 1}
                 style={{ padding: '6px 12px', borderRadius: '6px', background: paginaAtual === 1 ? 'rgba(255,255,255,0.05)' : 'var(--accent-primary)', color: paginaAtual === 1 ? 'var(--text-secondary)' : '#fff', border: 'none', cursor: paginaAtual === 1 ? 'not-allowed' : 'pointer', fontSize: '0.875rem' }}
               >
                 Anterior
               </button>
-              
+
               <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                 Página {paginaAtual} de {totalPaginas}
               </span>
-              
-              <button 
+
+              <button
                 onClick={() => setPaginaAtual(prev => Math.min(prev + 1, totalPaginas))}
                 disabled={paginaAtual === totalPaginas}
                 style={{ padding: '6px 12px', borderRadius: '6px', background: paginaAtual === totalPaginas ? 'rgba(255,255,255,0.05)' : 'var(--accent-primary)', color: paginaAtual === totalPaginas ? 'var(--text-secondary)' : '#fff', border: 'none', cursor: paginaAtual === totalPaginas ? 'not-allowed' : 'pointer', fontSize: '0.875rem' }}

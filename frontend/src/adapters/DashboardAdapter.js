@@ -85,11 +85,26 @@ class DashboardAdapter {
         }, 300);
       });
     }
-    
+
     return this._fetch('/ranking', {
       method: 'POST',
       body: JSON.stringify({ pagina, itensPorPagina, filtroPartido, filtroUF, metrica, ordem })
     });
+  }
+
+  static async getVisaoGeralGastos() {
+    if (USE_MOCK) {
+      return new Promise((resolve) => setTimeout(() => {
+        resolve(MOCK_DEPUTADOS.slice(0, 10).map((d, i) => ({
+          name: d.name,
+          gastos: d.gastos,
+          partido: d.partido,
+          uf: d.uf,
+          posicao_ranking: i + 1
+        })));
+      }, 300));
+    }
+    return this._fetch('/gastos');
   }
 
   static async getRankingBeneficio({ pagina = 1, itensPorPagina = 10, ordem = 'desc' } = {}) {
@@ -112,7 +127,7 @@ class DashboardAdapter {
         }, 300);
       });
     }
-    
+
     return this._fetch('/ranking-beneficio', {
       method: 'POST',
       body: JSON.stringify({ pagina, itensPorPagina, ordem })
@@ -243,6 +258,41 @@ class DashboardAdapter {
     return this._fetch(`/deputados/${id}`);
   }
 
+  static async getPerfilDesempenho(id) {
+    if (USE_MOCK) {
+      return new Promise((resolve) => setTimeout(() => {
+        resolve({
+          id_deputado: id,
+          indice_eficiencia: 626.7745,
+          beneficio_score: 185.3,
+          score_proposicoes: 120.5,
+          total_proposicoes: 15,
+          score_plenario: 40.0,
+          score_comissoes: 35.0,
+          fator_atividade: 1.25,
+          plenario_pct_presenca: 95.5,
+          plenario_presencas: 100,
+          plenario_ausencias_justificadas: 2,
+          plenario_ausencias_nao_justificadas: 3,
+          comissoes_pct_presenca: 88.0,
+          comissoes_presencas: 50,
+          comissoes_ausencias_justificadas: 5,
+          comissoes_ausencias_nao_justificadas: 2
+        });
+      }, 300));
+    }
+    return this._fetch(`/deputados/${id}/desempenho`);
+  }
+
+  static async getBeneficioRankingPosition(id) {
+    if (USE_MOCK) {
+      return new Promise((resolve) => setTimeout(() => {
+        resolve({ posicao: 42, total: 513 });
+      }, 300));
+    }
+    return this._fetch(`/deputados/${id}/ranking-position`);
+  }
+
   static async getPerfilNuvemPalavras(id) {
     if (USE_MOCK) {
       return new Promise((resolve) => setTimeout(() => {
@@ -298,13 +348,13 @@ class DashboardAdapter {
           { id: 104, data_votacao: '12/07/2023', descricao: 'PL 890/2023 - Segurança nas Fronteiras', ementa: 'Aumenta efetivo nas fronteiras...', voto: 'Sim', tema: 'Segurança' },
           { id: 105, data_votacao: '30/06/2023', descricao: 'MP 1150/2023 - Meio Ambiente', ementa: 'Altera o código florestal...', voto: 'Não', tema: 'Meio Ambiente' }
         ];
-        
+
         let filtradas = MOCK_VOTACOES.filter(v => {
           if (filtroTema !== 'Todos' && v.tema !== filtroTema) return false;
           if (busca && !v.descricao.toLowerCase().includes(busca.toLowerCase())) return false;
           return true;
         });
-        
+
         resolve({
           data: filtradas,
           total: filtradas.length,
@@ -313,7 +363,7 @@ class DashboardAdapter {
         });
       }, 300));
     }
-    
+
     return this._fetch(`/deputados/${id}/votacoes`, {
       method: 'POST',
       body: JSON.stringify({ pagina, itensPorPagina, filtroTema, busca })

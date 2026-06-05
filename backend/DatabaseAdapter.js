@@ -989,7 +989,316 @@ LIMIT ${limit} OFFSET ${offset}
       throw error;
     }
   }
+
+  // Retorna os dados detalhados e crus de desempenho do deputado (presenças, fator de atividade, score cru)
+  async getPerfilDesempenho(id_deputado) {
+    try {
+      const query = `
+        WITH
+        pesos AS (
+            SELECT
+                7.0::numeric AS peso_proposicao,
+                1.5::numeric AS peso_plenario,
+                1.0::numeric AS peso_comissoes
+        ),
+        gastos AS (
+            SELECT
+                d.id_deputado,
+                SUM(COALESCE(d.valor_liquido,0)) AS total_gasto
+            FROM despesas d
+            GROUP BY d.id_deputado
+        ),
+        autoria AS (
+            SELECT
+                id_proposicao,
+                COUNT(*) AS qtd_autores
+            FROM proposicoes_autores
+            GROUP BY id_proposicao
+        ),
+        proposicoes_score AS (
+            SELECT
+                pa.id_deputado,
+                COUNT(DISTINCT pa.id_proposicao) AS total_proposicoes,
+                SUM(
+                    /* PESO DO TIPO */
+                    (
+                        CASE
+                            WHEN p.sigla_tipo_proposicao = 'PEC' THEN 20.0
+                            WHEN p.sigla_tipo_proposicao = 'PL' THEN 15.0
+                            WHEN p.sigla_tipo_proposicao IN ('PLP','MPV','PDL','PRC','PLV','PLN') THEN 10.0
+                            WHEN p.sigla_tipo_proposicao IN ('PFC','RIC','RCP','INC','SIT') THEN 5.0
+                            WHEN p.sigla_tipo_proposicao IN ('EMC','EMP','EMR','EMS','EMA','EML','EMO','ESB','SBE','SBE-A','SBT','SBT-A','SBR','SSP','ERD') THEN 2.0
+                            WHEN p.sigla_tipo_proposicao IN ('REQ','REC','RPD','RPDR','DTQ','PPP','PIN','PRR','RRC') THEN 1.0
+                            ELSE 0.1
+                        END
+                    )
+                    *
+                    /* SITUAÇÃO */
+                    (
+                        CASE
+                            WHEN p.ultimo_status_id_situacao IN (1140) THEN 1.00
+                            WHEN p.ultimo_status_id_situacao IN (900,926,1150,1293,939) THEN 0.75
+                            WHEN p.ultimo_status_id_situacao IN (923,941,950,1120,1222,1292) THEN 0.00
+                            ELSE 0.25
+                        END
+                    )
+                    *
+                    /* AUTORIA */
+                    (
+                        CASE
+                            WHEN a.qtd_autores = 1 THEN 1.0
+                            WHEN pa.ordem_assinatura = 1 THEN 0.5
+                            ELSE 0.5 / NULLIF(a.qtd_autores - 1,0)
+                        END
+                    )
+                ) AS score_proposicoes
+            FROM proposicoes_autores pa
+            JOIN proposicoes p ON p.id_proposicao = pa.id_proposicao
+            JOIN autoria a ON a.id_proposicao = pa.id_proposicao
+            GROUP BY pa.id_deputado
+        ),
+        presencas AS (
+            SELECT
+                p.id_dep AS id_deputado,
+                SUM(plenario_presencas) AS plenario_presencas,
+                SUM(plenario_ausencias_justificadas) AS plenario_ausencias_justificadas,
+                SUM(plenario_ausencias_nao_justificadas) AS plenario_ausencias_nao_justificadas,
+                SUM(comissoes_presencas) AS comissoes_presencas,
+                SUM(comissoes_ausencias_justificadas) AS comissoes_ausencias_justificadas,
+                SUM(comissoes_ausencias_nao_justificadas) AS comissoes_ausencias_nao_justificadas
+            FROM presenca_deputados p
+            GROUP BY p.id_dep
+        ),
+        presencas_score AS (
+            SELECT
+                id_deputado,
+                GREATEST(
+                    0,
+                    (plenario_presencas - (3 * plenario_ausencias_nao_justificadas)) * 
+                    (plenario_presencas::numeric / NULLIF((plenario_presencas + plenario_ausencias_justificadas + plenario_ausencias_nao_justificadas), 0))
+                ) AS score_plenario,
+                GREATEST(
+                    0,
+                    (comissoes_presencas - (3 * comissoes_ausencias_nao_justificadas)) * 
+                    (comissoes_presencas::numeric / NULLIF((comissoes_presencas + comissoes_ausencias_justificadas + comissoes_ausencias_nao_justificadas), 0))
+                ) AS score_comissoes
+            FROM presencas
+        ),
+        beneficios AS (
+            SELECT
+                d.id_deputado,
+                d.ultimo_status_nome_eleitoral AS deputado,
+                d.ultimo_status_sigla_partido AS partido,
+                d.ultimo_status_sigla_uf AS uf,
+                COALESCE(g.total_gasto,0) AS total_gasto,
+                COALESCE(psc.total_proposicoes,0) AS total_proposicoes,
+                COALESCE(psc.score_proposicoes,0) AS score_proposicoes,
+                COALESCE(pr.score_plenario,0) AS score_plenario,
+                COALESCE(pr.score_comissoes,0) AS score_comissoes,
+                (
+                    (ps.peso_proposicao * COALESCE(psc.score_proposicoes,0)) +
+                    (ps.peso_plenario * COALESCE(pr.score_plenario,0)) +
+                    (ps.peso_comissoes * COALESCE(pr.score_comissoes,0))
+                ) AS beneficio_score
+            FROM deputados d
+            LEFT JOIN gastos g ON g.id_deputado = d.id_deputado
+            LEFT JOIN proposicoes_score psc ON psc.id_deputado = d.id_deputado
+            LEFT JOIN presencas_score pr ON pr.id_deputado = d.id_deputado
+            CROSS JOIN pesos ps
+        ),
+        p25 AS (
+            SELECT
+                PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY beneficio_score) AS p25_beneficio
+            FROM beneficios
+        )
+        SELECT
+            b.id_deputado,
+            b.deputado,
+            b.partido,
+            b.uf,
+            ROUND(b.total_gasto,2) AS total_gasto,
+            b.total_proposicoes,
+            ROUND(b.score_proposicoes,2) AS score_proposicoes,
+            ROUND(b.score_plenario,2) AS score_plenario,
+            ROUND(b.score_comissoes,2) AS score_comissoes,
+            ROUND(b.beneficio_score,2) AS beneficio_score,
+            ROUND((b.beneficio_score / (b.beneficio_score + p.p25_beneficio))::numeric,4) AS fator_atividade,
+            ROUND((b.beneficio_score * (b.beneficio_score / (b.beneficio_score + p.p25_beneficio)) / (1 + (b.total_gasto / 1000.0)))::numeric,4) AS indice_eficiencia,
+            
+            COALESCE(pr.plenario_presencas, 0) AS plenario_presencas,
+            COALESCE(pr.plenario_ausencias_justificadas, 0) AS plenario_ausencias_justificadas,
+            COALESCE(pr.plenario_ausencias_nao_justificadas, 0) AS plenario_ausencias_nao_justificadas,
+            COALESCE(
+                ROUND((pr.plenario_presencas::numeric / NULLIF(pr.plenario_presencas + pr.plenario_ausencias_justificadas + pr.plenario_ausencias_nao_justificadas, 0) * 100), 2), 
+                0
+            ) AS plenario_pct_presenca,
+
+            COALESCE(pr.comissoes_presencas, 0) AS comissoes_presencas,
+            COALESCE(pr.comissoes_ausencias_justificadas, 0) AS comissoes_ausencias_justificadas,
+            COALESCE(pr.comissoes_ausencias_nao_justificadas, 0) AS comissoes_ausencias_nao_justificadas,
+            COALESCE(
+                ROUND((pr.comissoes_presencas::numeric / NULLIF(pr.comissoes_presencas + pr.comissoes_ausencias_justificadas + pr.comissoes_ausencias_nao_justificadas, 0) * 100), 2), 
+                0
+            ) AS comissoes_pct_presenca
+
+        FROM beneficios b
+        CROSS JOIN p25 p
+        LEFT JOIN presencas pr ON pr.id_deputado = b.id_deputado
+        WHERE b.id_deputado = $1
+      `;
+      const result = await this.client.query(query, [id_deputado]);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Erro na query getPerfilDesempenho:', error);
+      throw error;
+    }
+  }
+
+  async getBeneficioRankingPosition(id_deputado) {
+    try {
+      const query = `
+      WITH
+      pesos AS (
+        SELECT
+          7.0::numeric AS peso_proposicao,
+          1.5::numeric AS peso_plenario,
+          1.0::numeric AS peso_comissoes
+      ),
+      gastos AS (
+        SELECT
+          d.id_deputado,
+          SUM(COALESCE(d.valor_liquido, 0)) AS total_gasto
+        FROM despesas d
+        GROUP BY d.id_deputado
+      ),
+      autoria AS (
+        SELECT
+          id_proposicao,
+          COUNT(*) AS qtd_autores
+        FROM proposicoes_autores
+        GROUP BY id_proposicao
+      ),
+      proposicoes_score AS (
+        SELECT
+          pa.id_deputado,
+          COUNT(DISTINCT pa.id_proposicao) AS total_proposicoes,
+          SUM(
+            (
+              CASE
+                WHEN p.sigla_tipo_proposicao = 'PEC' THEN 20.0
+                WHEN p.sigla_tipo_proposicao = 'PL' THEN 15.0
+                WHEN p.sigla_tipo_proposicao IN ('PLP', 'MPV', 'PDL', 'PRC', 'PLV', 'PLN') THEN 10.0
+                WHEN p.sigla_tipo_proposicao IN ('PFC', 'RIC', 'RCP', 'INC', 'SIT') THEN 5.0
+                WHEN p.sigla_tipo_proposicao IN ('EMC', 'EMP', 'EMR', 'EMS', 'EMA', 'EML', 'EMO', 'ESB', 'SBE', 'SBE-A', 'SBT', 'SBT-A', 'SBR', 'SSP', 'ERD') THEN 2.0
+                WHEN p.sigla_tipo_proposicao IN ('REQ', 'REC', 'RPD', 'RPDR', 'DTQ', 'PPP', 'PIN', 'PRR', 'RRC') THEN 1.0
+                ELSE 0.1
+              END
+            )
+            *
+            (
+              CASE
+                WHEN p.ultimo_status_id_situacao IN (1140) THEN 1.00
+                WHEN p.ultimo_status_id_situacao IN (900, 926, 1150, 1293, 939) THEN 0.75
+                WHEN p.ultimo_status_id_situacao IN (923, 941, 950, 1120, 1222, 1292) THEN 0.00
+                ELSE 0.25
+              END
+            )
+            *
+            (
+              CASE
+                WHEN a.qtd_autores = 1 THEN 1.0
+                WHEN pa.ordem_assinatura = 1 THEN 0.5
+                ELSE 0.5 / NULLIF(a.qtd_autores - 1, 0)
+              END
+            )
+          ) AS score_proposicoes
+        FROM proposicoes_autores pa
+        JOIN proposicoes p ON p.id_proposicao = pa.id_proposicao
+        JOIN autoria a ON a.id_proposicao = pa.id_proposicao
+        GROUP BY pa.id_deputado
+      ),
+      presencas AS (
+        SELECT
+          p.id_dep AS id_deputado,
+          SUM(plenario_presencas) AS plenario_presencas,
+          SUM(plenario_ausencias_justificadas) AS plenario_ausencias_justificadas,
+          SUM(plenario_ausencias_nao_justificadas) AS plenario_ausencias_nao_justificadas,
+          SUM(comissoes_presencas) AS comissoes_presencas,
+          SUM(comissoes_ausencias_justificadas) AS comissoes_ausencias_justificadas,
+          SUM(comissoes_ausencias_nao_justificadas) AS comissoes_ausencias_nao_justificadas
+        FROM presenca_deputados p
+        GROUP BY p.id_dep
+      ),
+      presencas_score AS (
+        SELECT
+          id_deputado,
+          GREATEST(0, (plenario_presencas - (3 * plenario_ausencias_nao_justificadas)) *
+            (plenario_presencas::numeric / NULLIF(plenario_presencas + plenario_ausencias_justificadas + plenario_ausencias_nao_justificadas, 0))
+          ) AS score_plenario,
+          GREATEST(0, (comissoes_presencas - (3 * comissoes_ausencias_nao_justificadas)) *
+            (comissoes_presencas::numeric / NULLIF(comissoes_presencas + comissoes_ausencias_justificadas + comissoes_ausencias_nao_justificadas, 0))
+          ) AS score_comissoes
+        FROM presencas
+      ),
+      beneficios AS (
+        SELECT
+          d.id_deputado,
+          d.ultimo_status_nome_eleitoral AS deputado,
+          d.ultimo_status_sigla_partido AS partido,
+          d.ultimo_status_sigla_uf AS uf,
+          COALESCE(g.total_gasto, 0) AS total_gasto,
+          COALESCE(psc.total_proposicoes, 0) AS total_proposicoes,
+          COALESCE(psc.score_proposicoes, 0) AS score_proposicoes,
+          COALESCE(pr.score_plenario, 0) AS score_plenario,
+          COALESCE(pr.score_comissoes, 0) AS score_comissoes,
+          (
+            (ps.peso_proposicao * COALESCE(psc.score_proposicoes, 0)) +
+            (ps.peso_plenario * COALESCE(pr.score_plenario, 0)) +
+            (ps.peso_comissoes * COALESCE(pr.score_comissoes, 0))
+          ) AS beneficio_score
+        FROM deputados d
+        LEFT JOIN gastos g ON g.id_deputado = d.id_deputado
+        LEFT JOIN proposicoes_score psc ON psc.id_deputado = d.id_deputado
+        LEFT JOIN presencas_score pr ON pr.id_deputado = d.id_deputado
+        CROSS JOIN pesos ps
+      ),
+      p25 AS (
+        SELECT PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY beneficio_score) AS p25_beneficio
+        FROM beneficios
+      ),
+      ranking AS (
+        SELECT
+          b.id_deputado,
+          ROW_NUMBER() OVER (ORDER BY (
+            ROUND((b.beneficio_score * (b.beneficio_score / (b.beneficio_score + p.p25_beneficio)) / (1 + (b.total_gasto / 1000.0)))::numeric, 4)
+          ) DESC) AS posicao,
+          COUNT(*) OVER () AS total_deputados
+        FROM beneficios b
+        CROSS JOIN p25 p
+      )
+      SELECT
+        posicao,
+        total_deputados
+      FROM ranking
+      WHERE id_deputado = $1
+    `;
+
+      const result = await this.client.query(query, [id_deputado]);
+      if (result.rows.length === 0) {
+        return null; // deputado nÃ£o encontrado
+      }
+      return {
+        posicao: parseInt(result.rows[0].posicao, 10),
+        total: parseInt(result.rows[0].total_deputados, 10)
+      };
+    } catch (error) {
+      console.error('Erro na query getBeneficioRankingPosition:', error);
+      throw error;
+    }
+  }
 }
+
+
 
 
 // Exportamos uma única instância (Padrão Singleton) para ser reaproveitada

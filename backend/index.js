@@ -132,6 +132,33 @@ async function startServer() {
       }
     });
 
+    // 9.5 Rota GET para o Desempenho e Presença do Deputado (dados crus)
+    app.get('/api/deputados/:id/desempenho', async (req, res) => {
+      try {
+        const dados = await dbAdapter.getPerfilDesempenho(req.params.id);
+        if (!dados) {
+          return res.status(404).json({ erro: 'Desempenho não encontrado' });
+        }
+        res.json(dados);
+      } catch (error) {
+        console.error('Erro na rota /api/deputados/:id/desempenho:', error);
+        res.status(500).json({ erro: 'Falha ao buscar desempenho do deputado' });
+      }
+    });
+
+    // 9.5 Rota GET para a Posição no Ranking de Benefício
+    app.get('/api/deputados/:id/ranking-position', async (req, res) => {
+      try {
+        const dados = await dbAdapter.getBeneficioRankingPosition(req.params.id);
+        if (!dados) {
+          return res.status(404).json({ erro: 'Posição no ranking não encontrada' });
+        }
+        res.json(dados);
+      } catch (error) {
+        console.error('Erro na rota /api/deputados/:id/ranking-position:', error);
+        res.status(500).json({ erro: 'Falha ao buscar posição no ranking' });
+      }
+    });
     // 10. Rota GET para a Nuvem de Palavras do Deputado
     app.get('/api/deputados/:id/nuvem', async (req, res) => {
       try {
