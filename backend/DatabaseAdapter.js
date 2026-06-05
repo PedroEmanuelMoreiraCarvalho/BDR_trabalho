@@ -315,9 +315,11 @@ class DatabaseAdapter {
         SELECT 
           d.id_deputado,
           d.ultimo_status_nome_eleitoral AS nome,
+          d.nome_civil_deputado AS nome_civil,
           d.ultimo_status_sigla_partido AS partido,
           d.ultimo_status_sigla_uf AS uf,
           d.escolaridade_deputado AS escolaridade,
+          d.ultimo_status_url_foto AS url_foto_perfil,
           TO_CHAR(d.data_nascimento_deputado, 'DD/MM/YYYY') AS data_nascimento,
           'Não cadastrado no BD' AS email,
           'Não cadastrado no BD' AS telefone,
@@ -517,21 +519,21 @@ class DatabaseAdapter {
       const params = [];
       let paramIndex = 1;
 
-        // Condição para busca por nome (accent-insensitive)
-        const searchPattern = `%${nomePesquisa}%`;
-        if (exactMatch) {
-          whereClause = `(
+      // Condição para busca por nome (accent-insensitive)
+      const searchPattern = `%${nomePesquisa}%`;
+      if (exactMatch) {
+        whereClause = `(
             unaccent(d.ultimo_status_nome_eleitoral) ILIKE unaccent($${paramIndex})
             OR unaccent(d.nome_civil_deputado) ILIKE unaccent($${paramIndex})
           )`;
-          params.push(searchPattern);
-        } else {
-          whereClause = `(
+        params.push(searchPattern);
+      } else {
+        whereClause = `(
             unaccent(d.ultimo_status_nome_eleitoral) ILIKE unaccent($${paramIndex})
             OR unaccent(d.nome_civil_deputado) ILIKE unaccent($${paramIndex})
           )`;
-          params.push(searchPattern);
-        }
+        params.push(searchPattern);
+      }
       paramIndex++;
 
       // Filtro por partido
