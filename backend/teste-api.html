@@ -152,7 +152,6 @@
   <script>
     const BASE = 'http://localhost:3000';
 
-    // Definição de todas as rotas
     const rotas = [
       {
         nome: 'Teste de Conexão',
@@ -163,6 +162,20 @@
         nome: 'Gastos Gerais (Top 10)',
         metodo: 'GET',
         path: '/api/gastos',
+      },
+      // NOVO CARD: Gastos com Paginação e Filtros (POST)
+      {
+        nome: '📊 Gastos com Paginação e Filtros (POST)',
+        metodo: 'POST',
+        path: '/api/gastos',
+        campos: [
+          { key: 'page', placeholder: 'Página (padrão: 1)', default: '1' },
+          { key: 'limit', placeholder: 'Itens por página (padrão: 10, máx: 100)', default: '10' },
+          { key: 'partido', placeholder: 'Filtrar por sigla do partido (ex: PT, PL, PSDB)', default: '' },
+          { key: 'uf', placeholder: 'Filtrar por UF (ex: SP, RJ, MG)', default: '' },
+          { key: 'orderBy', placeholder: 'Ordenar por (gastos, name, partido, uf)', default: 'gastos' },
+          { key: 'orderDirection', placeholder: 'ASC ou DESC', default: 'DESC' },
+        ]
       },
       {
         nome: 'Escolaridade',
@@ -312,29 +325,34 @@
       const btn = document.querySelector(`#grid .card:nth-child(${i + 1}) button`);
       const inputs = document.querySelectorAll(`#fields-${i} input`);
 
-      // Lê os valores dos inputs
       const vals = {};
       inputs.forEach(inp => { vals[inp.dataset.key] = inp.value; });
 
-      // Monta a URL substituindo {id} e {sigla}
       let url = BASE + rota.path;
       if (vals.id) url = url.replace('{id}', vals.id);
       if (vals.sigla) url = url.replace('{sigla}', vals.sigla);
 
-      // Monta o body para POST (sem os campos que foram para a URL)
       const body = { ...vals };
       delete body.id;
       delete body.sigla;
 
-      // Para CPF, limpa a formatação antes de enviar
-      if (rota.path === '/api/deputados/cpf' && body.cpf) {
-        body.cpf = body.cpf.replace(/\D/g, '');
+      // Converte números para int quando necessário
+      if (rota.path === '/api/gastos' && rota.metodo === 'POST') {
+        if (body.page) body.page = parseInt(body.page);
+        if (body.limit) body.limit = parseInt(body.limit);
+        if (body.orderDirection) body.orderDirection = body.orderDirection.toUpperCase();
+        // Remove campos vazios para não sobrecarregar
+        if (body.partido === '') delete body.partido;
+        if (body.uf === '') delete body.uf;
+        if (body.orderBy === '') delete body.orderBy;
       }
 
-      // Remove campos vazios ou com valor padrão 'Todos' quando apropriado
-      if (rota.path === '/api/deputados/cpf') {
+      if (rota.path === '/api/deputados/cpf' && body.cpf) {
+        body.cpf = body.cpf.replace(/\D/g, '');
         if (body.filtroPartido === 'Todos') delete body.filtroPartido;
         if (body.filtroUF === 'Todos') delete body.filtroUF;
+        if (body.pagina) body.pagina = parseInt(body.pagina);
+        if (body.itensPorPagina) body.itensPorPagina = parseInt(body.itensPorPagina);
       }
 
       pre.style.display = 'block';
@@ -352,21 +370,16 @@
         const resp = await fetch(url, opts);
         const json = await resp.json();
 
-        // Formata a saída para melhor visualização
         let outputText = JSON.stringify(json, null, 2);
 
-        // Adiciona informações adicionais para a rota de CPF
         if (rota.path === '/api/deputados/cpf' && json.results) {
           outputText += '\n\n📊 RESUMO:\n';
           outputText += `Total de resultados: ${json.total}\n`;
           outputText += `Página: ${json.pagina || 1}\n`;
           outputText += `Itens por página: ${json.itensPorPagina || 10}\n`;
-          if (json.cpf_pesquisado) {
-            outputText += `CPF pesquisado: ${json.cpf_pesquisado}\n`;
-          }
+          if (json.cpf_pesquisado) outputText += `CPF pesquisado: ${json.cpf_pesquisado}\n`;
         }
 
-        // Adiciona informações adicionais para a rota de pesquisa por nome
         if (rota.path === '/api/deputados/pesquisa' && Array.isArray(json)) {
           outputText += '\n\n📊 RESUMO:\n';
           outputText += `Total de deputados encontrados: ${json.length}\n`;
@@ -375,9 +388,7 @@
             json.slice(0, 5).forEach((dep, idx) => {
               outputText += `${idx + 1}. ${dep.nome} (${dep.partido}/${dep.uf})\n`;
             });
-            if (json.length > 5) {
-              outputText += `... e mais ${json.length - 5} deputados\n`;
-            }
+            if (json.length > 5) outputText += `... e mais ${json.length - 5} deputados\n`;
           }
         }
 
@@ -391,7 +402,6 @@
       }
     }
 
-    // Função global para ser chamada pelo onclick
     window.chamar = chamar;
   </script>
 </body>

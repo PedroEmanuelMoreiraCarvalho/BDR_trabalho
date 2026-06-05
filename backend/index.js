@@ -32,12 +32,17 @@ async function startServer() {
       }
     });
 
-    // 3. Rota de exemplo para Gastos
-    app.get('/api/gastos', async (req, res) => {
+    // 3. Rota POST para Gastos com paginação
+    app.post('/api/gastos', async (req, res) => {
       try {
-        const dados = await dbAdapter.getVisaoGeralGastos();
+        // Extrai parâmetros do corpo da requisição (body)
+        const page = parseInt(req.body.pagina) || 1;
+        const limit = parseInt(req.body.itensPorPagina) || 10;
+
+        const dados = await dbAdapter.getVisaoGeralGastos(page, limit);
         res.json(dados);
       } catch (error) {
+        console.error('Erro na rota /api/gastos:', error);
         res.status(500).json({ erro: 'Falha ao buscar os gastos no banco de dados' });
       }
     });

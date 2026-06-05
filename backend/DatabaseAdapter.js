@@ -39,9 +39,12 @@ class DatabaseAdapter {
     }
   }
 
-  // Retorna os top 10 deputados que mais gastaram
-  async getVisaoGeralGastos() {
+  // Retorna os deputados que mais gastaram com paginação
+  async getVisaoGeralGastos(page = 1, limit = 10) {
     try {
+      // Calcula o offset baseado na página e limite
+      const offset = (page - 1) * limit;
+
       const query = `
         SELECT 
           nome_parlamentar AS name, 
@@ -51,10 +54,30 @@ class DatabaseAdapter {
         FROM despesas
         GROUP BY nome_parlamentar, sigla_partido, sigla_uf
         ORDER BY gastos DESC
-        LIMIT 10
+        LIMIT $1 OFFSET $2
       `;
-      const result = await this.client.query(query);
-      return result.rows;
+
+      const result = await this.client.query(query, [limit, offset]);
+
+      // Opcional: Buscar total de registros para calcular número total de páginas
+      const countQuery = `
+        SELECT COUNT(DISTINCT nome_parlamentar) as total
+        FROM despesas
+      `;
+      const countResult = await this.client.query(countQuery);
+      const total = parseInt(countResult.rows[0].total);
+
+      return {
+        data: result.rows,
+        pagination: {
+          currentPage: page,
+          limit: limit,
+          total: total,
+          totalPages: Math.ceil(total / limit),
+          hasNext: page * limit < total,
+          hasPrev: page > 1
+        }
+      };
     } catch (error) {
       console.error('Erro na query getVisaoGeralGastos:', error);
       throw error;
