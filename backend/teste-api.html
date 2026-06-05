@@ -269,6 +269,16 @@
           { key: 'filtroUF', placeholder: 'filtroUF (ex: SP ou Todos)', default: 'Todos' },
         ]
       },
+      {
+        nome: 'Ranking Benefício',
+        metodo: 'POST',
+        path: '/api/ranking-beneficio',
+        campos: [
+          { key: 'pagina', placeholder: 'pagina (ex: 1)', default: '1' },
+          { key: 'itensPorPagina', placeholder: 'itensPorPagina (ex: 10)', default: '10' },
+          { key: 'ordem', placeholder: 'ordem (asc ou desc)', default: 'desc' }
+        ]
+      }
     ];
 
     const grid = document.getElementById('grid');

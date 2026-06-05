@@ -24,6 +24,9 @@ async function startServer() {
           mensagem: 'A API está conectada ao banco usando a classe DatabaseAdapter!',
           data_do_banco: horaAtual
         });
+
+        // Duplicate ranking-beneficio route removed (handled later correctly)
+
       } catch (error) {
         res.status(500).json({ status: 'erro', mensagem: 'Erro interno no banco' });
       }
@@ -39,24 +42,19 @@ async function startServer() {
       }
     });
 
-    // 4. Rota POST para o Ranking Geral (Recebe os filtros no body)
-    app.post('/api/ranking', async (req, res) => {
+    // 4.2. Rota POST para o Ranking de Benefícios (paginação)
+    app.post('/api/ranking-beneficio', async (req, res) => {
       try {
-        // Os parâmetros virão do frontend através do req.body
         const parametros = {
           pagina: req.body.pagina || 1,
           itensPorPagina: req.body.itensPorPagina || 10,
-          filtroPartido: req.body.filtroPartido || 'Todos',
-          filtroUF: req.body.filtroUF || 'Todos',
-          metrica: req.body.metrica || 'eficiencia',
           ordem: req.body.ordem || 'desc'
         };
-
-        const dados = await dbAdapter.getVisaoGeralRanking(parametros);
+        const dados = await dbAdapter.getBeneficioRanking(parametros);
         res.json(dados);
       } catch (error) {
-        console.error('Erro na rota /api/ranking:', error);
-        res.status(500).json({ erro: 'Falha ao buscar o ranking no banco de dados' });
+        console.error('Erro na rota /api/ranking-beneficio:', error);
+        res.status(500).json({ erro: 'Falha ao buscar o ranking de benefícios no banco de dados' });
       }
     });
 
