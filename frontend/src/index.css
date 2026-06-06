@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
+  zoom: 0.75; /* Simula um zoom out de 75% na aplicação inteira nativamente */
+  
   /* Premium Dark Mode Colors */
   --bg-base: #0b0f19;
   --bg-surface: #111827;
@@ -25,6 +27,27 @@
   --transition-fast: 0.15s ease;
   --transition-normal: 0.3s ease;
   --transition-slow: 0.5s ease;
+}
+
+[data-theme="light"] {
+  --bg-base: #cbd5e1;
+  --bg-surface: #e2e8f0;
+  --bg-surface-elevated: #cbd5e1;
+  
+  --accent-primary: #2563eb;
+  --accent-secondary: #7c3aed;
+  --accent-tertiary: #059669;
+  
+  --text-primary: #1e293b;
+  --text-secondary: #334155;
+  --text-muted: #475569;
+  
+  --border-color: rgba(15, 23, 42, 0.12);
+  --border-highlight: rgba(15, 23, 42, 0.2);
+  
+  --glass-bg: rgba(226, 232, 240, 0.85);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --glass-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.1);
 }
 
 * {

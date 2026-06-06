@@ -20,13 +20,15 @@ const DashboardNacional = () => {
   const [totalItens, setTotalItens] = useState(0);
   const [totalGastos, setTotalGastos] = useState(0);
   const [dataEscolaridade, setDataEscolaridade] = useState([]);
+  const [dataCorrelacao, setDataCorrelacao] = useState([]);
   const [dataFornecedores, setDataFornecedores] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Estado para travar a renderização do gráfico até o dado chegar
   const [appliedMetrica, setAppliedMetrica] = useState(metrica);
 
-  const [metricaEscolaridade, setMetricaEscolaridade] = useState('gastos'); // 'gastos', 'fidelidade', 'proposicoes'
+  const [metricaEscolaridade, setMetricaEscolaridade] = useState('gasto_medio'); // 'gasto_medio', 'perc_alinhamento', 'total_proposicoes', etc.
+
 
   // ==========================================
   // SIMULAÇÃO DE CHAMADA À API (useEffect)
@@ -36,12 +38,12 @@ const DashboardNacional = () => {
       setLoading(true);
       try {
         let rankingResponse;
-        
+
         if (metrica === 'eficiencia') {
           // Ranking Benefício não possui filtros por estado ou partido no backend, 
           // então chamamos diretamente com paginação e ordem.
           const res = await DashboardAdapter.getRankingBeneficio({ pagina: paginaAtual, itensPorPagina, ordem });
-          
+
           const offset = (paginaAtual - 1) * itensPorPagina;
           const dataMapped = res.map((item, index) => ({
             id_deputado: item.id_deputado,
@@ -52,7 +54,7 @@ const DashboardNacional = () => {
             indice_eficiencia: parseFloat(item.indice_eficiencia || 0),
             posicao_ranking: offset + index + 1
           }));
-          
+
           rankingResponse = {
             data: dataMapped,
             total: 513, // Total fixo pois não há filtros que reduzam a base
@@ -61,7 +63,7 @@ const DashboardNacional = () => {
         } else {
           // Quando a métrica for 'gastos', usa a rota específica de gastos
           const resGastos = await DashboardAdapter.getVisaoGeralGastos();
-          
+
           let dataMapped = resGastos.map((item, index) => ({
             name: item.name,
             partido: item.partido,
@@ -92,6 +94,9 @@ const DashboardNacional = () => {
         const escolaridade = await DashboardAdapter.getVisaoGeralEscolaridade();
         setDataEscolaridade(escolaridade);
 
+        const correlacao = await DashboardAdapter.getCorrelacaoEscolaridade();
+        setDataCorrelacao(correlacao);
+
         const fornecedores = await DashboardAdapter.getVisaoGeralFornecedores();
         setDataFornecedores(fornecedores);
       } catch (error) {
@@ -116,15 +121,21 @@ const DashboardNacional = () => {
       const data = payload[0].payload;
       let valLabel = '';
       let valFormat = payload[0].value;
-      
-      if (metricaEscolaridade === 'gastos') {
-        valLabel = 'Gasto Total';
-        valFormat = `R$ ${(payload[0].value / 1000).toLocaleString('pt-BR')}k`;
-      } else if (metricaEscolaridade === 'fidelidade') {
-        valLabel = 'Alinhamento Médio';
+
+      if (metricaEscolaridade === 'gasto_medio') {
+        valLabel = 'Gasto Médio';
+        valFormat = `R$ ${(payload[0].value / 1000).toLocaleString('pt-BR', {minimumFractionDigits: 1, maximumFractionDigits: 1})}k`;
+      } else if (metricaEscolaridade === 'perc_alinhamento') {
+        valLabel = 'Fidelidade Média';
         valFormat = `${payload[0].value}%`;
-      } else {
+      } else if (metricaEscolaridade === 'total_proposicoes') {
         valLabel = 'Total Proposições';
+        valFormat = payload[0].value;
+      } else if (metricaEscolaridade === 'media_presencas_comissoes') {
+        valLabel = 'Presenças Médias Comissões';
+        valFormat = payload[0].value;
+      } else if (metricaEscolaridade === 'media_presencas_plenario') {
+        valLabel = 'Presenças Médias Plenário';
         valFormat = payload[0].value;
       }
 
@@ -252,7 +263,7 @@ const DashboardNacional = () => {
               Ranking de Deputados ({appliedMetrica === 'eficiencia' ? 'Índice de Eficiência' : 'Total de Gastos'})
             </h2>
             {appliedMetrica === 'eficiencia' && (
-              <div 
+              <div
                 onMouseEnter={() => setShowInfo(true)}
                 onMouseLeave={() => setShowInfo(false)}
                 style={{ cursor: 'pointer', color: 'var(--text-muted)' }}
@@ -260,7 +271,7 @@ const DashboardNacional = () => {
                 <Info size={18} />
               </div>
             )}
-            
+
             {showInfo && (
               <div style={{
                 position: 'absolute',
@@ -278,7 +289,7 @@ const DashboardNacional = () => {
                 fontSize: '0.875rem',
                 lineHeight: '1.4'
               }}>
-                <strong>Índice de Eficiência (0 a 10)</strong><br/>
+                <strong>Índice de Eficiência</strong><br />
                 Avalia o Custo-Benefício do deputado baseando-se em:
                 <ul style={{ paddingLeft: '16px', margin: '8px 0 0 0' }}>
                   <li><strong>Projetos de Lei:</strong> Maior peso para PECs, projetos aprovados e autoria principal.</li>
@@ -294,24 +305,24 @@ const DashboardNacional = () => {
               <ResponsiveContainer>
                 <BarChart data={baseData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" horizontal={true} vertical={false} />
-                  <XAxis 
-                    type="number" 
-                    domain={[0, appliedMetrica === 'eficiencia' ? 10 : 800000]} 
-                    stroke="#9ca3af" 
-                    tick={{ fill: '#9ca3af', fontSize: 12 }} 
-                    axisLine={false} 
-                    tickLine={false} 
+                  <XAxis
+                    type="number"
+                    domain={[0, appliedMetrica === 'eficiencia' ? 10 : 800000]}
+                    stroke="#9ca3af"
+                    tick={{ fill: '#9ca3af', fontSize: 12 }}
+                    axisLine={false}
+                    tickLine={false}
                   />
-                  <YAxis 
-                    type="category" 
+                  <YAxis
+                    type="category"
                     width={220}
                     dataKey={(data) => {
                       return `${data.posicao_ranking}º - ${data.name} (${data.partido})`;
-                    }} 
-                    stroke="#9ca3af" 
-                    tick={{ fill: '#9ca3af', fontSize: 12 }} 
-                    axisLine={false} 
-                    tickLine={false} 
+                    }}
+                    stroke="#9ca3af"
+                    tick={{ fill: '#9ca3af', fontSize: 12 }}
+                    axisLine={false}
+                    tickLine={false}
                   />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f9fafb' }}
@@ -322,10 +333,10 @@ const DashboardNacional = () => {
                       appliedMetrica === 'eficiencia' ? 'Score' : 'Gastos'
                     ]}
                   />
-                  <Bar 
-                    dataKey={appliedMetrica === 'eficiencia' ? 'indice_eficiencia' : 'gastos'} 
-                    fill={appliedMetrica === 'eficiencia' ? '#10b981' : '#3b82f6'} 
-                    radius={[0, 4, 4, 0]} 
+                  <Bar
+                    dataKey={appliedMetrica === 'eficiencia' ? 'indice_eficiencia' : 'gastos'}
+                    fill={appliedMetrica === 'eficiencia' ? '#10b981' : '#3b82f6'}
+                    radius={[0, 4, 4, 0]}
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -339,19 +350,19 @@ const DashboardNacional = () => {
           {/* Paginação */}
           {totalPaginas > 1 && (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-              <button 
+              <button
                 onClick={() => setPaginaAtual(prev => Math.max(prev - 1, 1))}
                 disabled={paginaAtual === 1}
                 style={{ padding: '6px 12px', borderRadius: '6px', background: paginaAtual === 1 ? 'rgba(255,255,255,0.05)' : 'var(--accent-primary)', color: paginaAtual === 1 ? 'var(--text-secondary)' : '#fff', border: 'none', cursor: paginaAtual === 1 ? 'not-allowed' : 'pointer', fontSize: '0.875rem' }}
               >
                 Anterior
               </button>
-              
+
               <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                 Página {paginaAtual} de {totalPaginas}
               </span>
-              
-              <button 
+
+              <button
                 onClick={() => setPaginaAtual(prev => Math.min(prev + 1, totalPaginas))}
                 disabled={paginaAtual === totalPaginas}
                 style={{ padding: '6px 12px', borderRadius: '6px', background: paginaAtual === totalPaginas ? 'rgba(255,255,255,0.05)' : 'var(--accent-primary)', color: paginaAtual === totalPaginas ? 'var(--text-secondary)' : '#fff', border: 'none', cursor: paginaAtual === totalPaginas ? 'not-allowed' : 'pointer', fontSize: '0.875rem' }}
@@ -482,39 +493,41 @@ const DashboardNacional = () => {
                 Impacto do nível de instrução nas métricas (Média por deputado em cada nível).
               </p>
             </div>
-            
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: '8px' }}>
               <Filter size={16} style={{ color: 'var(--text-secondary)' }} />
-              <select 
-                value={metricaEscolaridade} 
+              <select
+                value={metricaEscolaridade}
                 onChange={e => setMetricaEscolaridade(e.target.value)}
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontSize: '0.875rem', cursor: 'pointer' }}
               >
-                <option value="gastos" style={{ background: 'var(--bg-surface)' }}>vs. Gastos Totais</option>
-                <option value="fidelidade" style={{ background: 'var(--bg-surface)' }}>vs. Fidelidade</option>
-                <option value="proposicoes" style={{ background: 'var(--bg-surface)' }}>vs. Proposições</option>
+                <option value="gasto_medio" style={{ background: 'var(--bg-surface)' }}>vs. Gasto Médio</option>
+                <option value="perc_alinhamento" style={{ background: 'var(--bg-surface)' }}>vs. Fidelidade</option>
+                <option value="total_proposicoes" style={{ background: 'var(--bg-surface)' }}>vs. Proposições</option>
+                <option value="media_presencas_comissoes" style={{ background: 'var(--bg-surface)' }}>vs. Presença Comissões</option>
+                <option value="media_presencas_plenario" style={{ background: 'var(--bg-surface)' }}>vs. Presença Plenário</option>
               </select>
             </div>
           </div>
-          
+
           <div style={{ width: '100%', flex: 1, minHeight: '300px' }}>
             <ResponsiveContainer>
-              <BarChart 
-                data={dataEscolaridade} 
+              <BarChart
+                data={dataCorrelacao}
                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="escolaridade" stroke="#9ca3af" tick={{fill: '#9ca3af', fontSize: 12}} axisLine={false} tickLine={false} />
-                <YAxis 
-                  stroke="#9ca3af" 
-                  tick={{fill: '#9ca3af', fontSize: 12}} 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tickFormatter={(val) => metricaEscolaridade === 'gastos' ? `${val / 1000}k` : val}
+                <XAxis dataKey="escolaridade" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 9 }} interval={0} axisLine={false} tickLine={false} />
+                <YAxis
+                  stroke="#9ca3af"
+                  tick={{ fill: '#9ca3af', fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(val) => metricaEscolaridade === 'gasto_medio' ? `${val / 1000}k` : val}
                 />
-                <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} content={<CustomBarTooltip />} />
+                <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} content={<CustomBarTooltip />} />
                 <Bar dataKey={metricaEscolaridade} radius={[4, 4, 0, 0]}>
-                  {dataEscolaridade.map((entry, index) => (
+                  {dataCorrelacao.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS_PIE[index % COLORS_PIE.length]} />
                   ))}
                 </Bar>

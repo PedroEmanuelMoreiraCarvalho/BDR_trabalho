@@ -1,9 +1,30 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, PieChart, BarChart3, Search } from 'lucide-react';
+import { LayoutDashboard, Users, Search, Sun, Moon } from 'lucide-react';
 import './Sidebar.css';
 
 const Sidebar = () => {
+  const [isLightMode, setIsLightMode] = useState(false);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+      setIsLightMode(true);
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    setIsLightMode(!isLightMode);
+    if (!isLightMode) {
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('theme', 'light');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'dark');
+    }
+  };
+
   const navItems = [
     { path: '/', icon: <LayoutDashboard size={20} />, label: 'Visão Geral' },
     { path: '/partidos', icon: <Users size={20} />, label: 'Visão Partidária' },
@@ -11,25 +32,60 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside className="sidebar glass-panel">
-      <div className="sidebar-header">
-        <h2 className="text-gradient">BDR Analytics</h2>
-        <p className="subtitle">Observatório Político</p>
+    <aside className="sidebar glass-panel" style={{ display: 'flex', flexDirection: 'column', height: '100vh', justifyContent: 'space-between' }}>
+      <div>
+        <div className="sidebar-header">
+          <h2 className="text-gradient">BDR Analytics</h2>
+          <p className="subtitle">Observatório Político</p>
+        </div>
+
+        <nav className="sidebar-nav">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </NavLink>
+          ))}
+        </nav>
       </div>
 
-      <nav className="sidebar-nav">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+      <div style={{ padding: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+          <Moon size={20} style={{ color: !isLightMode ? 'var(--accent-primary)' : 'var(--text-muted)' }} />
+          <div 
+            onClick={toggleTheme}
+            style={{
+              width: '50px',
+              height: '26px',
+              background: isLightMode ? '#cbd5e1' : '#3b82f6',
+              borderRadius: '13px',
+              position: 'relative',
+              cursor: 'pointer',
+              border: '1px solid var(--border-color)',
+              transition: 'background 0.3s ease'
+            }}
           >
-            {item.icon}
-            <span>{item.label}</span>
-          </NavLink>
-        ))}
-      </nav>
-
+            <div 
+              style={{
+                width: '20px',
+                height: '20px',
+                background: '#ffffff',
+                borderRadius: '50%',
+                position: 'absolute',
+                top: '2px',
+                left: isLightMode ? '26px' : '2px',
+                transition: 'left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+              }}
+            />
+          </div>
+          <Sun size={20} style={{ color: isLightMode ? '#f59e0b' : 'var(--text-muted)' }} />
+        </div>
+      </div>
     </aside>
   );
 };

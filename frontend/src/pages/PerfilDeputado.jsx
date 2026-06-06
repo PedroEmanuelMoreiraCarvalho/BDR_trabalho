@@ -161,37 +161,61 @@ const PerfilDeputado = () => {
         <span>Voltar para Busca</span>
       </Link>
 
-      <div className="glass-card" style={{ padding: '40px 32px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '32px' }}>
-        <div style={{ width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+      <div className="glass-card" style={{ padding: '32px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '24px' }}>
+        <div style={{ width: '180px', height: '180px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden', border: '4px solid var(--border-color)' }}>
           {perfil.url_foto_perfil ? (
             <img src={perfil.url_foto_perfil} alt={`Foto de ${perfil.nome}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
-            <UserIcon size={64} style={{ color: 'var(--text-secondary)' }} />
+            <UserIcon size={80} style={{ color: 'var(--text-secondary)' }} />
           )}
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <h1 style={{ fontSize: '2.5rem', margin: 0, lineHeight: 1.2 }}>{perfil.nome}</h1>
-              {perfil.nome_civil && (
-                <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginTop: '4px', textTransform: 'capitalize' }}>
-                  {perfil.nome_civil.toLowerCase()}
-                </span>
-              )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <h1 style={{ fontSize: '2.5rem', margin: 0, lineHeight: 1.1 }}>{perfil.nome}</h1>
+                {perfil.nome_civil && (
+                  <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', display: 'block', marginTop: '2px', textTransform: 'capitalize' }}>
+                    {perfil.nome_civil.toLowerCase()}
+                  </span>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', color: 'var(--text-secondary)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ background: 'rgba(59, 130, 246, 0.2)', color: 'var(--accent-primary)', padding: '2px 10px', borderRadius: '8px', fontWeight: '600', fontSize: '0.875rem' }}>
+                      {perfil.partido}
+                    </span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.875rem' }}>
+                      <MapPin size={16} /> {perfil.uf}
+                    </span>
+                  </span>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', color: 'var(--text-secondary)', flexWrap: 'wrap', fontSize: '0.875rem' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <BookOpen size={14} /> {perfil.escolaridade}
+                    </span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Calendar size={14} /> Nascido em {perfil.data_nascimento}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {perfil.indice_eficiencia !== undefined && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', textAlign: 'right' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
-                  <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Score de Eficiência</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
+                  <span style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Score de Eficiência</span>
                   <div onMouseEnter={() => setShowInfo(true)} onMouseLeave={() => setShowInfo(false)} style={{ cursor: 'pointer', color: 'var(--text-muted)' }}>
-                    <Info size={16} />
+                    <Info size={18} />
                   </div>
                   {showInfo && (
-                    <div style={{ position: 'absolute', top: '100%', right: '0px', marginTop: '8px', zIndex: 50, width: '320px', padding: '12px', background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)', color: '#f9fafb', fontSize: '0.875rem', lineHeight: '1.4', textAlign: 'left' }}>
-                      <strong>Score de Eficiência Absoluto</strong><br />
+                    <div style={{ position: 'absolute', top: '100%', right: '0px', marginTop: '8px', zIndex: 50, width: '360px', padding: '16px', background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)', color: '#f9fafb', fontSize: '0.875rem', lineHeight: '1.5', textAlign: 'left' }}>
+                      <strong style={{ fontSize: '1rem', color: 'var(--accent-primary)' }}>Score de Eficiência Absoluto</strong><br />
                       Avalia o Custo-Benefício do deputado baseando-se em:
-                      <ul style={{ paddingLeft: '16px', margin: '8px 0 0 0' }}>
+                      <ul style={{ paddingLeft: '20px', margin: '12px 0 0 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <li><strong>Projetos de Lei:</strong> Maior peso para PECs, projetos aprovados e autoria principal.</li>
                         <li><strong>Assiduidade:</strong> Presença em Plenário e Comissões.</li>
                         <li><strong>Gastos:</strong> Deputados com alta produção e baixo custo recebem os melhores scores.</li>
@@ -200,48 +224,15 @@ const PerfilDeputado = () => {
                   )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginTop: '4px' }}>
-                  <span style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>
+                  <span style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#10b981', lineHeight: '1', textShadow: '0 2px 10px rgba(16, 185, 129, 0.2)' }}>
                     {desempenho ? Number(desempenho.indice_eficiencia).toLocaleString('pt-BR', { maximumFractionDigits: 4 }) : 'Carregando...'}
                   </span>
                 </div>
-                <div style={{ fontSize: '0.75rem', color: (rankingPosition && (rankingPosition.posicao / rankingPosition.total) <= 0.5) ? '#10b981' : '#ef4444', marginTop: '2px', fontWeight: '500' }}>
+                <div style={{ fontSize: '0.875rem', color: (rankingPosition && (rankingPosition.posicao / rankingPosition.total) <= 0.5) ? '#10b981' : '#ef4444', marginTop: '6px', fontWeight: '500' }}>
                   {rankingPosition ? calcularPercentualRanking(rankingPosition.posicao, rankingPosition.total) : ''}
                 </div>
               </div>
             )}
-          </div>
-
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '32px', color: 'var(--text-secondary)' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ background: 'rgba(59, 130, 246, 0.2)', color: 'var(--accent-primary)', padding: '4px 12px', borderRadius: '12px', fontWeight: '600', fontSize: '1rem' }}>
-                  {perfil.partido}
-                </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '1rem' }}>
-                  <MapPin size={18} /> {perfil.uf}
-                </span>
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Building size={16} /> {perfil.endereco}
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <BookOpen size={16} /> {perfil.escolaridade}
-              </span>
-            </div>
-
-            <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)', display: 'block' }}></div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Calendar size={16} /> Nascido em {perfil.data_nascimento}
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Mail size={16} /> {perfil.email}
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Phone size={16} /> {perfil.telefone}
-              </span>
-            </div>
           </div>
         </div>
       </div>
@@ -401,7 +392,7 @@ const PerfilDeputado = () => {
         <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
           <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Principais Fornecedores</h2>
           <p className="text-secondary" style={{ fontSize: '0.875rem', marginBottom: '16px' }}>
-            Top 5 empresas/pessoas que mais receberam verba do deputado.
+            Top 10 empresas/pessoas que mais receberam verba do deputado.
           </p>
           <div style={{ flex: 1, overflowY: 'auto' }}>
             {fornecedores.map((fornecedor, index) => {

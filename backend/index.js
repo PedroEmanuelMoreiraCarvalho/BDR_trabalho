@@ -74,6 +74,17 @@ async function startServer() {
       }
     });
 
+    // 5.1 Rota GET para Correlação de Escolaridade
+    app.get('/api/correlacao-escolaridade', async (req, res) => {
+      try {
+        const dados = await dbAdapter.getCorrelacaoEscolaridade();
+        res.json(dados);
+      } catch (error) {
+        console.error('Erro na rota /api/correlacao-escolaridade:', error);
+        res.status(500).json({ erro: 'Falha ao buscar correlação de escolaridade no banco de dados' });
+      }
+    });
+
     // 6. Rota GET para Fornecedores
     app.get('/api/fornecedores', async (req, res) => {
       try {

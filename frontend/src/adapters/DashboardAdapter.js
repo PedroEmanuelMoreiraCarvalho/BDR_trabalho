@@ -138,15 +138,23 @@ class DashboardAdapter {
     if (USE_MOCK) {
       return new Promise((resolve) => setTimeout(() => {
         resolve([
-          { escolaridade: 'Superior Completo', total_deputados: 405, gastos: 4500, fidelidade: 85.0, proposicoes: 120 },
-          { escolaridade: 'Ensino Médio', total_deputados: 56, gastos: 3800, fidelidade: 90.0, proposicoes: 45 },
-          { escolaridade: 'Pós-Graduação', total_deputados: 32, gastos: 5200, fidelidade: 80.0, proposicoes: 150 },
-          { escolaridade: 'Ensino Fundamental', total_deputados: 12, gastos: 2000, fidelidade: 95.0, proposicoes: 10 },
-          { escolaridade: 'Superior Incompleto', total_deputados: 8, gastos: 3000, fidelidade: 82.0, proposicoes: 30 }
+          { escolaridade: 'Superior Completo', total_deputados: 405, percentual: 85.0 },
+          { escolaridade: 'Ensino Médio', total_deputados: 56, percentual: 90.0 },
         ]);
       }, 300));
     }
     return this._fetch('/escolaridade');
+  }
+
+  static async getCorrelacaoEscolaridade() {
+    if (USE_MOCK) {
+      return new Promise((resolve) => setTimeout(() => {
+        resolve([
+          { escolaridade: 'Superior Completo', gasto_medio: 4500, perc_alinhamento: 85.0, total_proposicoes: 120, media_presencas_comissoes: 10, media_presencas_plenario: 35 },
+        ]);
+      }, 300));
+    }
+    return this._fetch('/correlacao-escolaridade');
   }
 
   static async getVisaoGeralFornecedores() {
