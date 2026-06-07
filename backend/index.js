@@ -32,14 +32,27 @@ async function startServer() {
       }
     });
 
-    // 3. Rota POST para Gastos com paginação
+    // 2.5 Rota POST para soma total de gastos (com filtros)
+    app.post('/api/total-gastos', async (req, res) => {
+      try {
+        const { filtroPartido = 'Todos', filtroUF = 'Todos' } = req.body;
+        const dados = await dbAdapter.getTotalGastosGeral({ filtroPartido, filtroUF });
+        res.json(dados);
+      } catch (error) {
+        console.error('Erro na rota /api/total-gastos:', error);
+        res.status(500).json({ erro: 'Falha ao buscar o total global de gastos' });
+      }
+    });
+
+    // 3. Rota POST para Gastos com paginação e filtros
     app.post('/api/gastos', async (req, res) => {
       try {
-        // Extrai parâmetros do corpo da requisição (body)
         const page = parseInt(req.body.pagina) || 1;
         const limit = parseInt(req.body.itensPorPagina) || 10;
+        const ordem = req.body.ordem || 'desc';
+        const { filtroPartido = 'Todos', filtroUF = 'Todos' } = req.body;
 
-        const dados = await dbAdapter.getVisaoGeralGastos(page, limit);
+        const dados = await dbAdapter.getVisaoGeralGastos(page, limit, ordem, filtroPartido, filtroUF);
         res.json(dados);
       } catch (error) {
         console.error('Erro na rota /api/gastos:', error);
@@ -47,13 +60,15 @@ async function startServer() {
       }
     });
 
-    // 4.2. Rota POST para o Ranking de Benefícios (paginação)
+    // 4.2. Rota POST para o Ranking de Benefícios (paginação e filtros)
     app.post('/api/ranking-beneficio', async (req, res) => {
       try {
         const parametros = {
           pagina: req.body.pagina || 1,
           itensPorPagina: req.body.itensPorPagina || 10,
-          ordem: req.body.ordem || 'desc'
+          ordem: req.body.ordem || 'desc',
+          filtroPartido: req.body.filtroPartido || 'Todos',
+          filtroUF: req.body.filtroUF || 'Todos'
         };
         const dados = await dbAdapter.getBeneficioRanking(parametros);
         res.json(dados);

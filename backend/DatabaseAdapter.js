@@ -39,33 +39,96 @@ class DatabaseAdapter {
     }
   }
 
+  // Retorna a soma total de gastos da Câmara
+  async getTotalGastosGeral({ filtroPartido = 'Todos', filtroUF = 'Todos' } = {}) {
+    try {
+      const values = [];
+      let paramCount = 1;
+      let whereClause = "WHERE 1=1";
+      
+      if (filtroPartido !== 'Todos') {
+        whereClause += ` AND d.ultimo_status_sigla_partido = $${paramCount++}`;
+        values.push(filtroPartido);
+      }
+      if (filtroUF !== 'Todos') {
+        whereClause += ` AND d.ultimo_status_sigla_uf = $${paramCount++}`;
+        values.push(filtroUF);
+      }
+
+      const query = `
+        SELECT CAST(SUM(COALESCE(des.valor_liquido, 0)) AS FLOAT) AS total_gasto
+        FROM despesas des
+        JOIN deputados d ON d.id_deputado = des.id_deputado
+        ${whereClause}
+      `;
+      const result = await this.client.query(query, values);
+      return { total: parseFloat(result.rows[0].total_gasto || 0) };
+    } catch (error) {
+      console.error('Erro na query getTotalGastosGeral:', error);
+      throw error;
+    }
+  }
+
   // Retorna os deputados que mais gastaram com paginação
-  async getVisaoGeralGastos(page = 1, limit = 10) {
+  async getVisaoGeralGastos(page = 1, limit = 10, ordem = 'desc', filtroPartido = 'Todos', filtroUF = 'Todos') {
     try {
       // Calcula o offset baseado na página e limite
       const offset = (page - 1) * limit;
+      const orderDir = ordem === 'asc' ? 'ASC' : 'DESC';
+
+      const values = [limit, offset];
+      let paramCount = 3; // 1 e 2 já são o limit e o offset
+      let whereClause = "WHERE 1=1";
+      
+      if (filtroPartido !== 'Todos') {
+        whereClause += ` AND d.ultimo_status_sigla_partido = $${paramCount++}`;
+        values.push(filtroPartido);
+      }
+      if (filtroUF !== 'Todos') {
+        whereClause += ` AND d.ultimo_status_sigla_uf = $${paramCount++}`;
+        values.push(filtroUF);
+      }
 
       const query = `
-        SELECT 
-          nome_parlamentar AS name, 
-          CAST(SUM(valor_liquido) AS FLOAT) AS gastos, 
-          sigla_partido AS partido, 
-          sigla_uf AS uf
-        FROM despesas
-        GROUP BY nome_parlamentar, sigla_partido, sigla_uf
-        ORDER BY gastos DESC
+        SELECT
+            d.ultimo_status_nome_eleitoral AS name,
+            d.ultimo_status_sigla_partido AS partido,
+            d.ultimo_status_sigla_uf AS uf,
+            CAST(SUM(COALESCE(des.valor_liquido, 0)) AS FLOAT) AS gastos
+        FROM despesas des
+        JOIN deputados d ON d.id_deputado = des.id_deputado
+        ${whereClause}
+        GROUP BY d.id_deputado, d.ultimo_status_nome_eleitoral, d.ultimo_status_sigla_partido, d.ultimo_status_sigla_uf
+        ORDER BY gastos ${orderDir}
         LIMIT $1 OFFSET $2
       `;
 
-      const result = await this.client.query(query, [limit, offset]);
+      const result = await this.client.query(query, values);
 
-      // Opcional: Buscar total de registros para calcular número total de páginas
+      // Buscar total de registros e soma total de gastos
+      const countValues = values.slice(2); // Remove limit e offset
+      let countWhere = countValues.length > 0 ? "WHERE 1=1" : "WHERE 1=1";
+      
+      // Recriar o whereClause para a query de count usando placeholders começando no $1
+      let countParamCount = 1;
+      if (filtroPartido !== 'Todos') {
+        countWhere += ` AND d.ultimo_status_sigla_partido = $${countParamCount++}`;
+      }
+      if (filtroUF !== 'Todos') {
+        countWhere += ` AND d.ultimo_status_sigla_uf = $${countParamCount++}`;
+      }
+
       const countQuery = `
-        SELECT COUNT(DISTINCT nome_parlamentar) as total
-        FROM despesas
+        SELECT 
+          COUNT(DISTINCT d.id_deputado) as total,
+          CAST(SUM(COALESCE(des.valor_liquido, 0)) AS FLOAT) as total_gastos_global
+        FROM despesas des
+        JOIN deputados d ON d.id_deputado = des.id_deputado
+        ${countWhere}
       `;
-      const countResult = await this.client.query(countQuery);
+      const countResult = await this.client.query(countQuery, countValues);
       const total = parseInt(countResult.rows[0].total);
+      const totalGastosGlobal = parseFloat(countResult.rows[0].total_gastos_global || 0);
 
       return {
         data: result.rows,
@@ -74,6 +137,7 @@ class DatabaseAdapter {
           limit: limit,
           total: total,
           totalPages: Math.ceil(total / limit),
+          totalGastosGlobal: totalGastosGlobal,
           hasNext: page * limit < total,
           hasPrev: page > 1
         }
@@ -187,7 +251,7 @@ class DatabaseAdapter {
     }
   }
 
-  // Retorna os dados da aba "Visão Geral" - Fornecedores (Top 10 fornecedores que mais receberam)
+  // Retorna os dados da aba "Visão Geral" - Fornecedores (Top 50 fornecedores que mais receberam)
   async getVisaoGeralFornecedores() {
     try {
       const query = `
@@ -199,7 +263,7 @@ class DatabaseAdapter {
         WHERE fornecedor_nome IS NOT NULL AND fornecedor_nome != ''
         GROUP BY fornecedor_nome, fornecedor_cnpj_cpf
         ORDER BY total_contrato DESC
-        LIMIT 10
+        LIMIT 50
       `;
       const result = await this.client.query(query);
       return result.rows;
@@ -746,10 +810,24 @@ class DatabaseAdapter {
     }
   }
   // Retorna ranking de benefícios dos deputados com paginação
-  async getBeneficioRanking({ pagina = 1, itensPorPagina = 10, ordem = 'desc' } = {}) {
+  async getBeneficioRanking({ pagina = 1, itensPorPagina = 10, ordem = 'desc', filtroPartido = 'Todos', filtroUF = 'Todos' } = {}) {
     try {
       const limit = parseInt(itensPorPagina);
       const offset = (parseInt(pagina) - 1) * limit;
+      
+      const values = [limit, offset];
+      let paramCount = 3;
+      let whereClause = "WHERE 1=1";
+
+      if (filtroPartido !== 'Todos') {
+        whereClause += ` AND b.partido = $${paramCount++}`;
+        values.push(filtroPartido);
+      }
+      if (filtroUF !== 'Todos') {
+        whereClause += ` AND b.uf = $${paramCount++}`;
+        values.push(filtroUF);
+      }
+
       const query = `
 WITH
 pesos AS (
@@ -979,11 +1057,35 @@ ROUND((b.beneficio_score / (b.beneficio_score + p.p25_beneficio))::numeric,4) AS
 ROUND((b.beneficio_score * (b.beneficio_score / (b.beneficio_score + p.p25_beneficio)) / (1 + (b.total_gasto / 1000.0)))::numeric,4) AS indice_eficiencia
 FROM beneficios b
 CROSS JOIN p25 p
+${whereClause}
 ORDER BY indice_eficiencia ${ordem === 'asc' ? 'ASC' : 'DESC'}
-LIMIT ${limit} OFFSET ${offset}
+LIMIT $1 OFFSET $2
       `;
-      const result = await this.client.query(query);
-      return result.rows;
+      const result = await this.client.query(query, values);
+
+      const countValues = values.slice(2);
+      let countWhere = "WHERE 1=1";
+      let countParamCount = 1;
+      if (filtroPartido !== 'Todos') {
+        countWhere += ` AND d.ultimo_status_sigla_partido = $${countParamCount++}`;
+      }
+      if (filtroUF !== 'Todos') {
+        countWhere += ` AND d.ultimo_status_sigla_uf = $${countParamCount++}`;
+      }
+
+      const countQuery = `
+        SELECT COUNT(*) as total 
+        FROM deputados d
+        ${countWhere}
+      `;
+      const countResult = await this.client.query(countQuery, countValues);
+
+      return {
+        data: result.rows,
+        pagination: {
+           total: parseInt(countResult.rows[0].total)
+        }
+      };
     } catch (error) {
       console.error('Erro na query getBeneficioRanking:', error);
       throw error;

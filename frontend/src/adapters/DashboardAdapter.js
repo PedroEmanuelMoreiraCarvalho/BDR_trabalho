@@ -92,22 +92,45 @@ class DashboardAdapter {
     });
   }
 
-  static async getVisaoGeralGastos() {
+  static async getTotalGastosGeral({ filtroPartido = 'Todos', filtroUF = 'Todos' } = {}) {
     if (USE_MOCK) {
       return new Promise((resolve) => setTimeout(() => {
-        resolve(MOCK_DEPUTADOS.slice(0, 10).map((d, i) => ({
-          name: d.name,
-          gastos: d.gastos,
-          partido: d.partido,
-          uf: d.uf,
-          posicao_ranking: i + 1
-        })));
+        resolve({ total: 20080000 }); // mock de 20.08M
       }, 300));
     }
-    return this._fetch('/gastos');
+    return this._fetch('/total-gastos', {
+      method: 'POST',
+      body: JSON.stringify({ filtroPartido, filtroUF })
+    });
   }
 
-  static async getRankingBeneficio({ pagina = 1, itensPorPagina = 10, ordem = 'desc' } = {}) {
+  static async getVisaoGeralGastos({ pagina = 1, itensPorPagina = 10, ordem = 'desc', filtroPartido = 'Todos', filtroUF = 'Todos' } = {}) {
+    if (USE_MOCK) {
+      return new Promise((resolve) => setTimeout(() => {
+        resolve({
+          data: MOCK_DEPUTADOS.slice(0, 10).map((d, i) => ({
+            name: d.name,
+            gastos: d.gastos,
+            partido: d.partido,
+            uf: d.uf,
+            posicao_ranking: i + 1
+          })),
+          pagination: {
+            currentPage: 1,
+            limit: 10,
+            total: 10,
+            totalPages: 1
+          }
+        });
+      }, 300));
+    }
+    return this._fetch('/gastos', {
+      method: 'POST',
+      body: JSON.stringify({ pagina, itensPorPagina, ordem, filtroPartido, filtroUF })
+    });
+  }
+
+  static async getRankingBeneficio({ pagina = 1, itensPorPagina = 10, ordem = 'desc', filtroPartido = 'Todos', filtroUF = 'Todos' } = {}) {
     if (USE_MOCK) {
       return new Promise((resolve) => {
         setTimeout(() => {
@@ -123,14 +146,17 @@ class DashboardAdapter {
             total_gasto: d.gastos,
             indice_eficiencia: d.indice_eficiencia
           }));
-          resolve(paginados);
+          resolve({
+            data: paginados,
+            pagination: { total: MOCK_DEPUTADOS.length }
+          });
         }, 300);
       });
     }
 
     return this._fetch('/ranking-beneficio', {
       method: 'POST',
-      body: JSON.stringify({ pagina, itensPorPagina, ordem })
+      body: JSON.stringify({ pagina, itensPorPagina, ordem, filtroPartido, filtroUF })
     });
   }
 

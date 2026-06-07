@@ -40,12 +40,10 @@ const DashboardNacional = () => {
         let rankingResponse;
 
         if (metrica === 'eficiencia') {
-          // Ranking Benefício não possui filtros por estado ou partido no backend, 
-          // então chamamos diretamente com paginação e ordem.
-          const res = await DashboardAdapter.getRankingBeneficio({ pagina: paginaAtual, itensPorPagina, ordem });
+          const res = await DashboardAdapter.getRankingBeneficio({ pagina: paginaAtual, itensPorPagina, ordem, filtroPartido, filtroUF });
 
           const offset = (paginaAtual - 1) * itensPorPagina;
-          const dataMapped = res.map((item, index) => ({
+          const dataMapped = res.data.map((item, index) => ({
             id_deputado: item.id_deputado,
             name: item.deputado,
             partido: item.partido,
@@ -57,39 +55,35 @@ const DashboardNacional = () => {
 
           rankingResponse = {
             data: dataMapped,
-            total: 513, // Total fixo pois não há filtros que reduzam a base
-            total_gastos: dataMapped.reduce((acc, curr) => acc + curr.gastos, 0)
+            total: res.pagination ? res.pagination.total : 513
           };
         } else {
           // Quando a métrica for 'gastos', usa a rota específica de gastos
-          const resGastos = await DashboardAdapter.getVisaoGeralGastos();
+          const resGastos = await DashboardAdapter.getVisaoGeralGastos({ pagina: paginaAtual, itensPorPagina, ordem, filtroPartido, filtroUF });
 
-          let dataMapped = resGastos.map((item, index) => ({
+          const offset = (paginaAtual - 1) * itensPorPagina;
+          
+          let dataMapped = (resGastos.data || []).map((item, index) => ({
             name: item.name,
             partido: item.partido,
             uf: item.uf,
             gastos: parseFloat(item.gastos || 0),
-            posicao_ranking: index + 1
+            posicao_ranking: offset + index + 1
           }));
-
-          // Ordenação simples no frontend caso retorne invertido
-          if (ordem === 'asc') {
-            dataMapped = dataMapped.sort((a, b) => a.gastos - b.gastos);
-          } else {
-            dataMapped = dataMapped.sort((a, b) => b.gastos - a.gastos);
-          }
 
           rankingResponse = {
             data: dataMapped,
-            total: dataMapped.length, // Apenas top 10
-            total_gastos: dataMapped.reduce((acc, curr) => acc + curr.gastos, 0)
+            total: resGastos.pagination ? resGastos.pagination.total : dataMapped.length
           };
         }
 
         setBaseData(rankingResponse.data);
         setTotalItens(rankingResponse.total);
-        setTotalGastos(rankingResponse.total_gastos);
         setAppliedMetrica(metrica); // Atualiza a métrica visual apenas quando os novos dados chegam
+
+        // Busca o Total de Gastos Independente da Métrica (com os mesmos filtros)
+        const resTotalGastos = await DashboardAdapter.getTotalGastosGeral({ filtroPartido, filtroUF });
+        setTotalGastos(resTotalGastos.total);
 
         const escolaridade = await DashboardAdapter.getVisaoGeralEscolaridade();
         setDataEscolaridade(escolaridade);
@@ -165,46 +159,74 @@ const DashboardNacional = () => {
           <span style={{ fontWeight: 500 }}>Filtros:</span>
         </div>
 
-        <div style={{ flex: 1, minWidth: '150px', opacity: 0.5 }}>
+        <div style={{ flex: 1, minWidth: '150px' }}>
           <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Partido</label>
           <select
             value={filtroPartido}
             onChange={(e) => { setFiltroPartido(e.target.value); setPaginaAtual(1); }}
-            disabled={true}
-            title="Filtro indisponível para esta versão do ranking"
-            style={{ width: '100%', padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none', cursor: 'not-allowed' }}
+            style={{ width: '100%', padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
           >
             <option value="Todos" style={{ background: 'var(--bg-surface)' }}>Todos</option>
-            <option value="PL" style={{ background: 'var(--bg-surface)' }}>PL</option>
-            <option value="PT" style={{ background: 'var(--bg-surface)' }}>PT</option>
-            <option value="PSOL" style={{ background: 'var(--bg-surface)' }}>PSOL</option>
-            <option value="UNIÃO" style={{ background: 'var(--bg-surface)' }}>UNIÃO</option>
-            <option value="PP" style={{ background: 'var(--bg-surface)' }}>PP</option>
+            <option value="AVANTE" style={{ background: 'var(--bg-surface)' }}>AVANTE</option>
+            <option value="CIDADANIA" style={{ background: 'var(--bg-surface)' }}>CIDADANIA</option>
             <option value="MDB" style={{ background: 'var(--bg-surface)' }}>MDB</option>
-            <option value="PSB" style={{ background: 'var(--bg-surface)' }}>PSB</option>
+            <option value="MISSÃO" style={{ background: 'var(--bg-surface)' }}>MISSÃO</option>
+            <option value="NOVO" style={{ background: 'var(--bg-surface)' }}>NOVO</option>
+            <option value="PCdoB" style={{ background: 'var(--bg-surface)' }}>PCdoB</option>
             <option value="PDT" style={{ background: 'var(--bg-surface)' }}>PDT</option>
+            <option value="PL" style={{ background: 'var(--bg-surface)' }}>PL</option>
+            <option value="PODE" style={{ background: 'var(--bg-surface)' }}>PODE (Podemos)</option>
+            <option value="PP" style={{ background: 'var(--bg-surface)' }}>PP</option>
+            <option value="PRD" style={{ background: 'var(--bg-surface)' }}>PRD</option>
+            <option value="PSB" style={{ background: 'var(--bg-surface)' }}>PSB</option>
+            <option value="PSD" style={{ background: 'var(--bg-surface)' }}>PSD</option>
+            <option value="PSDB" style={{ background: 'var(--bg-surface)' }}>PSDB</option>
+            <option value="PSOL" style={{ background: 'var(--bg-surface)' }}>PSOL</option>
+            <option value="PT" style={{ background: 'var(--bg-surface)' }}>PT</option>
+            <option value="PV" style={{ background: 'var(--bg-surface)' }}>PV</option>
+            <option value="REDE" style={{ background: 'var(--bg-surface)' }}>REDE</option>
+            <option value="REPUBLICANOS" style={{ background: 'var(--bg-surface)' }}>REPUBLICANOS</option>
+            <option value="S.PART." style={{ background: 'var(--bg-surface)' }}>S.PART.</option>
+            <option value="SOLIDARIEDADE" style={{ background: 'var(--bg-surface)' }}>SOLIDARIEDADE</option>
+            <option value="UNIÃO" style={{ background: 'var(--bg-surface)' }}>UNIÃO</option>
           </select>
         </div>
 
-        <div style={{ flex: 1, minWidth: '150px', opacity: 0.5 }}>
+        <div style={{ flex: 1, minWidth: '150px' }}>
           <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Estado (UF)</label>
           <select
             value={filtroUF}
             onChange={(e) => { setFiltroUF(e.target.value); setPaginaAtual(1); }}
-            disabled={true}
-            title="Filtro indisponível para esta versão do ranking"
-            style={{ width: '100%', padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none', cursor: 'not-allowed' }}
+            style={{ width: '100%', padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
           >
             <option value="Todos" style={{ background: 'var(--bg-surface)' }}>Todos</option>
-            <option value="SP" style={{ background: 'var(--bg-surface)' }}>SP</option>
-            <option value="MG" style={{ background: 'var(--bg-surface)' }}>MG</option>
-            <option value="RJ" style={{ background: 'var(--bg-surface)' }}>RJ</option>
+            <option value="AC" style={{ background: 'var(--bg-surface)' }}>AC</option>
+            <option value="AL" style={{ background: 'var(--bg-surface)' }}>AL</option>
+            <option value="AP" style={{ background: 'var(--bg-surface)' }}>AP</option>
+            <option value="AM" style={{ background: 'var(--bg-surface)' }}>AM</option>
             <option value="BA" style={{ background: 'var(--bg-surface)' }}>BA</option>
-            <option value="RS" style={{ background: 'var(--bg-surface)' }}>RS</option>
-            <option value="PR" style={{ background: 'var(--bg-surface)' }}>PR</option>
-            <option value="SC" style={{ background: 'var(--bg-surface)' }}>SC</option>
-            <option value="PE" style={{ background: 'var(--bg-surface)' }}>PE</option>
             <option value="CE" style={{ background: 'var(--bg-surface)' }}>CE</option>
+            <option value="DF" style={{ background: 'var(--bg-surface)' }}>DF</option>
+            <option value="ES" style={{ background: 'var(--bg-surface)' }}>ES</option>
+            <option value="GO" style={{ background: 'var(--bg-surface)' }}>GO</option>
+            <option value="MA" style={{ background: 'var(--bg-surface)' }}>MA</option>
+            <option value="MT" style={{ background: 'var(--bg-surface)' }}>MT</option>
+            <option value="MS" style={{ background: 'var(--bg-surface)' }}>MS</option>
+            <option value="MG" style={{ background: 'var(--bg-surface)' }}>MG</option>
+            <option value="PA" style={{ background: 'var(--bg-surface)' }}>PA</option>
+            <option value="PB" style={{ background: 'var(--bg-surface)' }}>PB</option>
+            <option value="PR" style={{ background: 'var(--bg-surface)' }}>PR</option>
+            <option value="PE" style={{ background: 'var(--bg-surface)' }}>PE</option>
+            <option value="PI" style={{ background: 'var(--bg-surface)' }}>PI</option>
+            <option value="RJ" style={{ background: 'var(--bg-surface)' }}>RJ</option>
+            <option value="RN" style={{ background: 'var(--bg-surface)' }}>RN</option>
+            <option value="RS" style={{ background: 'var(--bg-surface)' }}>RS</option>
+            <option value="RO" style={{ background: 'var(--bg-surface)' }}>RO</option>
+            <option value="RR" style={{ background: 'var(--bg-surface)' }}>RR</option>
+            <option value="SC" style={{ background: 'var(--bg-surface)' }}>SC</option>
+            <option value="SP" style={{ background: 'var(--bg-surface)' }}>SP</option>
+            <option value="SE" style={{ background: 'var(--bg-surface)' }}>SE</option>
+            <option value="TO" style={{ background: 'var(--bg-surface)' }}>TO</option>
           </select>
         </div>
 
