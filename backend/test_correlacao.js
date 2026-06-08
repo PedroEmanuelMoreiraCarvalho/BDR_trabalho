@@ -13,7 +13,7 @@ async function run() {
         SELECT
             COALESCE(d.escolaridade_deputado, 'Sem informação') AS escolaridade,
             SUM(COALESCE(des.valor_liquido, 0)) AS total_gasto,
-            AVG(COALESCE(des.valor_liquido, 0)) AS gasto_medio
+            SUM(COALESCE(des.valor_liquido, 0)) / NULLIF(COUNT(DISTINCT d.id_deputado), 0) AS gasto_medio
         FROM despesas des
         JOIN deputados d ON d.id_deputado = des.id_deputado
         GROUP BY COALESCE(d.escolaridade_deputado, 'Sem informação')

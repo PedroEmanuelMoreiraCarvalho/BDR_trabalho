@@ -72,8 +72,8 @@ const VisaoPartidaria = () => {
       }[metric];
 
       return (
-        <div style={{ backgroundColor: '#1f2937', padding: '12px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f9fafb' }}>
-          <p style={{ fontWeight: 'bold', marginBottom: '8px', color: 'var(--text-primary)' }}>Partido: {data.partido}</p>
+        <div style={{ backgroundColor: 'var(--bg-surface)', padding: '12px', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+          <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>Partido: {data.partido}</p>
           <p style={{ fontSize: '0.875rem', color: payload[0].fill }}>{metricLabel}: {valDisplay}</p>
         </div>
       );
@@ -88,11 +88,11 @@ const VisaoPartidaria = () => {
       const naoAlinhados = data.total_considerado - data.total_alinhado;
 
       return (
-        <div style={{ backgroundColor: '#1f2937', padding: '12px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f9fafb' }}>
-          <p style={{ fontWeight: 'bold', marginBottom: '8px', color: 'var(--text-primary)' }}>Partido: {data.partido}</p>
+        <div style={{ backgroundColor: 'var(--bg-surface)', padding: '12px', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+          <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>Partido: {data.partido}</p>
           <p style={{ fontSize: '0.875rem', color: '#10b981' }}>Alinhados: {data.total_alinhado.toLocaleString()}</p>
           <p style={{ fontSize: '0.875rem', color: '#ef4444' }}>Não Alinhados: {naoAlinhados.toLocaleString()}</p>
-          <p style={{ fontSize: '0.875rem', marginTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px' }}>
+          <p style={{ fontSize: '0.875rem', marginTop: '8px', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
             Alinhamento: <strong style={{ color: payload[0].fill }}>{data.perc_alinhamento}%</strong>
           </p>
         </div>
@@ -169,8 +169,8 @@ const VisaoPartidaria = () => {
                 margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" horizontal={true} vertical={false} />
-                <XAxis type="number" domain={[0, 100]} stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} unit="%" />
-                <YAxis dataKey="partido" type="category" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12, fontWeight: 500 }} width={100} axisLine={false} tickLine={false} interval={0} />
+                <XAxis type="number" domain={[0, 100]} stroke="var(--text-primary)" tick={{ fill: 'var(--text-primary)', fontSize: 12 }} unit="%" />
+                <YAxis dataKey="partido" type="category" stroke="var(--text-primary)" tick={{ fill: 'var(--text-primary)', fontSize: 12, fontWeight: 500 }} width={100} axisLine={false} tickLine={false} interval={0} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
 
                 <Bar dataKey="perc_alinhamento" radius={[0, 4, 4, 0]}>
@@ -247,8 +247,8 @@ const VisaoPartidaria = () => {
               margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
-              <XAxis dataKey="partido" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={formatComparacaoYAxis} />
+              <XAxis dataKey="partido" stroke="var(--text-primary)" tick={{ fill: 'var(--text-primary)', fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis stroke="var(--text-primary)" tick={{ fill: 'var(--text-primary)', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={formatComparacaoYAxis} />
               <Tooltip content={<CustomComparacaoTooltip metric={comparacaoMetric} />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
               <Bar dataKey={comparacaoMetric} radius={[4, 4, 0, 0]}>
                 {dataComparacaoSorted.map((entry, index) => (

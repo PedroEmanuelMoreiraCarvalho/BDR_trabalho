@@ -277,21 +277,24 @@ class DatabaseAdapter {
   async getVisaoPartidariaAlinhamento() {
     try {
       const query = `
-        SELECT 
-          vv.deputado_sigla_partido AS partido,
-          COUNT(*) AS total_considerado,
-          SUM(CASE WHEN vv.voto = vo.orientacao THEN 1 ELSE 0 END) AS total_alinhado,
-          ROUND(
-            SUM(CASE WHEN vv.voto = vo.orientacao THEN 1 ELSE 0 END)::numeric / 
-            NULLIF(COUNT(*), 0)::numeric * 100
-          , 2) AS perc_alinhamento
-        FROM votacoes_votos vv
-        JOIN votacoes_orientacoes vo 
-          ON vv.id_votacao = vo.id_votacao 
-          AND vv.deputado_sigla_partido = vo.sigla_bancada
-        WHERE vv.deputado_sigla_partido IS NOT NULL 
-          AND vv.deputado_sigla_partido != ''
-        GROUP BY vv.deputado_sigla_partido
+        SELECT
+            vo.sigla_bancada AS partido,
+            COUNT(*) FILTER (WHERE vo.orientacao IN ('Sim', 'Não', 'Obstrução')) AS total_considerado,
+            COUNT(*) FILTER (WHERE vo.orientacao IN ('Sim', 'Não', 'Obstrução') AND vv.voto = vo.orientacao) AS total_alinhado,
+            ROUND(
+                CASE
+                    WHEN COUNT(*) FILTER (WHERE vo.orientacao IN ('Sim', 'Não', 'Obstrução')) = 0 THEN 0
+                    ELSE 100.0 * COUNT(*) FILTER (WHERE vo.orientacao IN ('Sim', 'Não', 'Obstrução') AND vv.voto = vo.orientacao)
+                         / COUNT(*) FILTER (WHERE vo.orientacao IN ('Sim', 'Não', 'Obstrução'))
+                END,
+                2
+            ) AS perc_alinhamento
+        FROM votacoes_orientacoes vo
+        JOIN votacoes_votos vv
+          ON vv.id_votacao = vo.id_votacao
+         AND vv.deputado_sigla_partido = vo.sigla_bancada
+        WHERE vo.sigla_bancada IS NOT NULL AND vo.sigla_bancada != ''
+        GROUP BY vo.sigla_bancada
         ORDER BY perc_alinhamento DESC
       `;
       const result = await this.client.query(query);
@@ -1125,7 +1128,7 @@ LIMIT $1 OFFSET $2
           SELECT
               COALESCE(d.escolaridade_deputado, 'Sem informação') AS escolaridade,
               SUM(COALESCE(des.valor_liquido, 0)) AS total_gasto,
-              AVG(COALESCE(des.valor_liquido, 0)) AS gasto_medio
+              SUM(COALESCE(des.valor_liquido, 0)) / NULLIF(COUNT(DISTINCT d.id_deputado), 0) AS gasto_medio
           FROM despesas des
           JOIN deputados d ON d.id_deputado = des.id_deputado
           GROUP BY COALESCE(d.escolaridade_deputado, 'Sem informação')
@@ -1243,6 +1246,8 @@ LIMIT $1 OFFSET $2
             SELECT
                 pa.id_deputado,
                 COUNT(DISTINCT pa.id_proposicao) AS total_proposicoes,
+                COUNT(DISTINCT CASE WHEN p.ultimo_status_id_situacao = 1140 THEN pa.id_proposicao END) AS proposicoes_aprovadas,
+                COUNT(DISTINCT CASE WHEN p.ultimo_status_id_situacao IN (900, 926, 1150, 1293, 939) THEN pa.id_proposicao END) AS proposicoes_avancadas,
                 SUM(
                     /* PESO DO TIPO */
                     (
@@ -1308,6 +1313,25 @@ LIMIT $1 OFFSET $2
                 ) AS score_comissoes
             FROM presencas
         ),
+        tipos_sucesso AS (
+            SELECT
+                pa.id_deputado,
+                p.sigla_tipo_proposicao,
+                CASE WHEN p.ultimo_status_id_situacao = 1140 THEN 'aprovada' ELSE 'avancada' END as status_sucesso,
+                COUNT(DISTINCT p.id_proposicao) as qtd
+            FROM proposicoes_autores pa
+            JOIN proposicoes p ON p.id_proposicao = pa.id_proposicao
+            WHERE p.ultimo_status_id_situacao IN (1140, 900, 926, 1150, 1293, 939)
+            GROUP BY pa.id_deputado, p.sigla_tipo_proposicao, status_sucesso
+        ),
+        tipos_agg AS (
+            SELECT
+                id_deputado,
+                json_agg(json_build_object('tipo', sigla_tipo_proposicao, 'qtd', qtd)) FILTER (WHERE status_sucesso = 'aprovada') AS tipos_aprovadas,
+                json_agg(json_build_object('tipo', sigla_tipo_proposicao, 'qtd', qtd)) FILTER (WHERE status_sucesso = 'avancada') AS tipos_avancadas
+            FROM tipos_sucesso
+            GROUP BY id_deputado
+        ),
         beneficios AS (
             SELECT
                 d.id_deputado,
@@ -1316,6 +1340,10 @@ LIMIT $1 OFFSET $2
                 d.ultimo_status_sigla_uf AS uf,
                 COALESCE(g.total_gasto,0) AS total_gasto,
                 COALESCE(psc.total_proposicoes,0) AS total_proposicoes,
+                COALESCE(psc.proposicoes_aprovadas,0) AS proposicoes_aprovadas,
+                COALESCE(psc.proposicoes_avancadas,0) AS proposicoes_avancadas,
+                COALESCE(ta.tipos_aprovadas, '[]'::json) AS tipos_aprovadas_lista,
+                COALESCE(ta.tipos_avancadas, '[]'::json) AS tipos_avancadas_lista,
                 COALESCE(psc.score_proposicoes,0) AS score_proposicoes,
                 COALESCE(pr.score_plenario,0) AS score_plenario,
                 COALESCE(pr.score_comissoes,0) AS score_comissoes,
@@ -1328,6 +1356,7 @@ LIMIT $1 OFFSET $2
             LEFT JOIN gastos g ON g.id_deputado = d.id_deputado
             LEFT JOIN proposicoes_score psc ON psc.id_deputado = d.id_deputado
             LEFT JOIN presencas_score pr ON pr.id_deputado = d.id_deputado
+            LEFT JOIN tipos_agg ta ON ta.id_deputado = d.id_deputado
             CROSS JOIN pesos ps
         ),
         p25 AS (
@@ -1342,6 +1371,10 @@ LIMIT $1 OFFSET $2
             b.uf,
             ROUND(b.total_gasto,2) AS total_gasto,
             b.total_proposicoes,
+            b.proposicoes_aprovadas,
+            b.proposicoes_avancadas,
+            b.tipos_aprovadas_lista,
+            b.tipos_avancadas_lista,
             ROUND(b.score_proposicoes,2) AS score_proposicoes,
             ROUND(b.score_plenario,2) AS score_plenario,
             ROUND(b.score_comissoes,2) AS score_comissoes,

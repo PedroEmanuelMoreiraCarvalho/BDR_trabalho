@@ -62,7 +62,7 @@ const DashboardNacional = () => {
           const resGastos = await DashboardAdapter.getVisaoGeralGastos({ pagina: paginaAtual, itensPorPagina, ordem, filtroPartido, filtroUF });
 
           const offset = (paginaAtual - 1) * itensPorPagina;
-          
+
           let dataMapped = (resGastos.data || []).map((item, index) => ({
             name: item.name,
             partido: item.partido,
@@ -118,7 +118,7 @@ const DashboardNacional = () => {
 
       if (metricaEscolaridade === 'gasto_medio') {
         valLabel = 'Gasto Médio';
-        valFormat = `R$ ${(payload[0].value / 1000).toLocaleString('pt-BR', {minimumFractionDigits: 1, maximumFractionDigits: 1})}k`;
+        valFormat = `R$ ${Number(payload[0].value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       } else if (metricaEscolaridade === 'perc_alinhamento') {
         valLabel = 'Fidelidade Média';
         valFormat = `${payload[0].value}%`;
@@ -134,8 +134,8 @@ const DashboardNacional = () => {
       }
 
       return (
-        <div style={{ backgroundColor: '#1f2937', padding: '12px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f9fafb' }}>
-          <p style={{ fontWeight: 'bold', marginBottom: '8px', color: 'var(--text-primary)' }}>{data.escolaridade}</p>
+        <div style={{ backgroundColor: 'var(--bg-surface)', padding: '12px', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+          <p style={{ margin: 0, fontWeight: 600, marginBottom: '8px' }}>{data.escolaridade}</p>
           <p style={{ fontSize: '0.875rem', color: 'var(--accent-primary)' }}>{valLabel}: {valFormat}</p>
         </div>
       );
@@ -296,20 +296,9 @@ const DashboardNacional = () => {
 
             {showInfo && (
               <div style={{
-                position: 'absolute',
-                top: '100%',
-                left: '0px',
-                marginTop: '8px',
-                zIndex: 50,
-                width: '350px',
-                padding: '12px',
-                background: '#1f2937',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '8px',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
-                color: '#f9fafb',
-                fontSize: '0.875rem',
-                lineHeight: '1.4'
+                position: 'absolute', top: '100%', right: '0px', marginTop: '8px', zIndex: 50, width: '360px',
+                padding: '16px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '12px',
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)', color: 'var(--text-primary)', fontSize: '0.875rem', lineHeight: '1.5', textAlign: 'left'
               }}>
                 <strong>Índice de Eficiência</strong><br />
                 Avalia o Custo-Benefício do deputado baseando-se em:
@@ -330,8 +319,8 @@ const DashboardNacional = () => {
                   <XAxis
                     type="number"
                     domain={[0, appliedMetrica === 'eficiencia' ? 10 : 800000]}
-                    stroke="#9ca3af"
-                    tick={{ fill: '#9ca3af', fontSize: 12 }}
+                    stroke="var(--text-primary)"
+                    tick={{ fill: 'var(--text-primary)', fontSize: 12 }}
                     axisLine={false}
                     tickLine={false}
                   />
@@ -341,13 +330,13 @@ const DashboardNacional = () => {
                     dataKey={(data) => {
                       return `${data.posicao_ranking}º - ${data.name} (${data.partido})`;
                     }}
-                    stroke="#9ca3af"
-                    tick={{ fill: '#9ca3af', fontSize: 12 }}
+                    stroke="var(--text-primary)"
+                    tick={{ fill: 'var(--text-primary)', fontSize: 12 }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f9fafb' }}
+                    contentStyle={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)' }}
                     itemStyle={{ color: appliedMetrica === 'eficiencia' ? '#10b981' : '#3b82f6' }}
                     cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                     formatter={(value) => [
@@ -430,8 +419,9 @@ const DashboardNacional = () => {
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f9fafb' }}
-                    itemStyle={{ color: '#fff' }}
+                    contentStyle={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)' }}
+                    itemStyle={{ color: '#10b981' }}
+                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -484,7 +474,7 @@ const DashboardNacional = () => {
                       </span>
                     </div>
                     <span className="text-gradient" style={{ fontSize: '0.875rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                      R$ {(fornecedor.total_contrato / 1000).toLocaleString('pt-BR')}k
+                      R$ {Number(fornecedor.total_contrato).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
 
@@ -539,13 +529,20 @@ const DashboardNacional = () => {
                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="escolaridade" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 9 }} interval={0} axisLine={false} tickLine={false} />
+                <XAxis dataKey="escolaridade" stroke="var(--text-primary)" tick={{ fill: 'var(--text-primary)', fontSize: 9 }} interval={0} axisLine={false} tickLine={false} />
                 <YAxis
-                  stroke="#9ca3af"
-                  tick={{ fill: '#9ca3af', fontSize: 12 }}
+                  stroke="var(--text-primary)"
+                  tick={{ fill: 'var(--text-primary)', fontSize: 12 }}
                   axisLine={false}
                   tickLine={false}
-                  tickFormatter={(val) => metricaEscolaridade === 'gasto_medio' ? `${val / 1000}k` : val}
+                  tickFormatter={(val) => {
+                    if (metricaEscolaridade === 'gasto_medio') {
+                      if (val >= 1000000) return `R$ ${(val / 1000000).toLocaleString('pt-BR', {maximumFractionDigits:1})}M`;
+                      if (val >= 1000) return `R$ ${(val / 1000).toLocaleString('pt-BR', {maximumFractionDigits:1})}k`;
+                      return `R$ ${val}`;
+                    }
+                    return val;
+                  }}
                 />
                 <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} content={<CustomBarTooltip />} />
                 <Bar dataKey={metricaEscolaridade} radius={[4, 4, 0, 0]}>

@@ -87,7 +87,7 @@ ORDER BY total_contrato DESC;
 SELECT
     COALESCE(d.escolaridade_deputado, 'Sem informação') AS escolaridade,
     SUM(COALESCE(des.valor_liquido, 0)) AS total_gasto,
-    AVG(COALESCE(des.valor_liquido, 0)) AS gasto_medio
+    SUM(COALESCE(des.valor_liquido, 0)) / NULLIF(COUNT(DISTINCT d.id_deputado), 0) AS gasto_medio
 FROM despesas des
 JOIN deputados d ON d.id_deputado = des.id_deputado
 -- WHERE des.ano = :ano
@@ -567,16 +567,20 @@ CROSS JOIN p25 p
 ORDER BY indice_eficiencia DESC;
 
 -- 10) Ordenar partidos conforme alinhamento interno
--- Alinhamento = % de votos iguais à orientação do partido (quando orientação é Sim/Não)
+-- Alinhamento = % de votos iguais à orientação do partido (quando orientação é Sim/Não/Obstrução)
 SELECT
     vo.sigla_bancada AS partido,
-    COUNT(*) FILTER (WHERE vo.orientacao IN ('Sim', 'Não') AND vv.voto IN ('Sim', 'Não')) AS total_considerado,
-    COUNT(*) FILTER (WHERE vo.orientacao = vv.voto AND vo.orientacao IN ('Sim', 'Não')) AS total_alinhado,
+    -- Consideramos apenas as orientações que exigem uma postura clara do deputado
+    COUNT(*) FILTER (WHERE vo.orientacao IN ('Sim', 'Não', 'Obstrução')) AS total_considerado,
+    
+    -- O deputado está alinhado se o seu voto for exatamente igual à orientação
+    COUNT(*) FILTER (WHERE vo.orientacao IN ('Sim', 'Não', 'Obstrução') AND vv.voto = vo.orientacao) AS total_alinhado,
+    
     ROUND(
         CASE
-            WHEN COUNT(*) FILTER (WHERE vo.orientacao IN ('Sim', 'Não') AND vv.voto IN ('Sim', 'Não')) = 0 THEN 0
-            ELSE 100.0 * COUNT(*) FILTER (WHERE vo.orientacao = vv.voto AND vo.orientacao IN ('Sim', 'Não'))
-                 / COUNT(*) FILTER (WHERE vo.orientacao IN ('Sim', 'Não') AND vv.voto IN ('Sim', 'Não'))
+            WHEN COUNT(*) FILTER (WHERE vo.orientacao IN ('Sim', 'Não', 'Obstrução')) = 0 THEN 0
+            ELSE 100.0 * COUNT(*) FILTER (WHERE vo.orientacao IN ('Sim', 'Não', 'Obstrução') AND vv.voto = vo.orientacao)
+                 / COUNT(*) FILTER (WHERE vo.orientacao IN ('Sim', 'Não', 'Obstrução'))
         END,
         2
     ) AS perc_alinhamento

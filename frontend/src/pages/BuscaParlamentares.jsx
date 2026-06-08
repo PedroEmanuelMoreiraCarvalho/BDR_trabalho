@@ -89,7 +89,7 @@ const BuscaParlamentares = () => {
                 background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' 
               }}>
                 {dep.url_perfil ? (
-                  <img src={dep.url_perfil} alt={dep.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={dep.url_perfil} alt={dep.nome} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
                 ) : (
                   <UserIcon size={32} style={{ color: 'var(--text-secondary)' }} />
                 )}

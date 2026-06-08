@@ -164,7 +164,7 @@ const PerfilDeputado = () => {
       <div className="glass-card" style={{ padding: '32px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '24px' }}>
         <div style={{ width: '180px', height: '180px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden', border: '4px solid var(--border-color)' }}>
           {perfil.url_foto_perfil ? (
-            <img src={perfil.url_foto_perfil} alt={`Foto de ${perfil.nome}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={perfil.url_foto_perfil} alt={`Foto de ${perfil.nome}`} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
           ) : (
             <UserIcon size={80} style={{ color: 'var(--text-secondary)' }} />
           )}
@@ -212,7 +212,7 @@ const PerfilDeputado = () => {
                     <Info size={18} />
                   </div>
                   {showInfo && (
-                    <div style={{ position: 'absolute', top: '100%', right: '0px', marginTop: '8px', zIndex: 50, width: '360px', padding: '16px', background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)', color: '#f9fafb', fontSize: '0.875rem', lineHeight: '1.5', textAlign: 'left' }}>
+                    <div style={{ position: 'absolute', top: '100%', right: '0px', marginTop: '8px', zIndex: 50, width: '360px', padding: '16px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)', color: 'var(--text-primary)', fontSize: '0.875rem', lineHeight: '1.5', textAlign: 'left' }}>
                       <strong style={{ fontSize: '1rem', color: 'var(--accent-primary)' }}>Score de Eficiência Absoluto</strong><br />
                       Avalia o Custo-Benefício do deputado baseando-se em:
                       <ul style={{ paddingLeft: '20px', margin: '12px 0 0 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -228,7 +228,7 @@ const PerfilDeputado = () => {
                     {desempenho ? Number(desempenho.indice_eficiencia).toLocaleString('pt-BR', { maximumFractionDigits: 4 }) : 'Carregando...'}
                   </span>
                 </div>
-                <div style={{ fontSize: '0.875rem', color: (rankingPosition && (rankingPosition.posicao / rankingPosition.total) <= 0.5) ? '#10b981' : '#ef4444', marginTop: '6px', fontWeight: '500' }}>
+                <div style={{ fontSize: '1rem', color: (rankingPosition && (rankingPosition.posicao / rankingPosition.total) <= 0.5) ? '#10b981' : '#ef4444', marginTop: '6px', fontWeight: '600' }}>
                   {rankingPosition ? calcularPercentualRanking(rankingPosition.posicao, rankingPosition.total) : ''}
                 </div>
               </div>
@@ -242,26 +242,56 @@ const PerfilDeputado = () => {
           <h2 style={{ fontSize: '1.25rem', marginBottom: '16px' }}>Métricas de Desempenho e Presença</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' }}>
 
-            {/* Score de Proposições */}
+            {/* Proposições Apresentadas */}
             <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>Pontuação de Proposições</span>
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>Proposições Apresentadas</span>
               <span className="text-gradient" style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '4px' }}>
-                {Number(desempenho.score_proposicoes).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
+                {desempenho.total_proposicoes ? desempenho.total_proposicoes.toLocaleString('pt-BR') : '0'}
               </span>
               <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                Baseado em {desempenho.total_proposicoes} proposições
+                Projetos, emendas, requerimentos, etc.
               </span>
             </div>
 
-            {/* Fator de Atividade */}
+            {/* Efetividade Legislativa */}
             <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>Fator de Atividade</span>
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>Efetividade Legislativa</span>
               <span className="text-gradient" style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '4px' }}>
-                {Number(desempenho.fator_atividade).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
+                {desempenho.proposicoes_aprovadas !== undefined ? (Number(desempenho.proposicoes_aprovadas) + Number(desempenho.proposicoes_avancadas)).toLocaleString('pt-BR') : '0'}
               </span>
-              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                Produtividade comparada à média
-              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: 'auto' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>Aprovadas em Definitivo:</span>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{Number(desempenho.proposicoes_aprovadas || 0)}</span>
+                  </div>
+                  {desempenho.tipos_aprovadas_lista && desempenho.tipos_aprovadas_lista.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                      {desempenho.tipos_aprovadas_lista.map((item, idx) => (
+                        <span key={idx} style={{ fontSize: '0.7rem', padding: '2px 6px', background: 'var(--bg-surface)', color: 'var(--text-primary)', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+                          {item.tipo}: {item.qtd}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>Tramitação Avançada:</span>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{Number(desempenho.proposicoes_avancadas || 0)}</span>
+                  </div>
+                  {desempenho.tipos_avancadas_lista && desempenho.tipos_avancadas_lista.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                      {desempenho.tipos_avancadas_lista.map((item, idx) => (
+                        <span key={idx} style={{ fontSize: '0.7rem', padding: '2px 6px', background: 'var(--bg-surface)', color: 'var(--text-primary)', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+                          {item.tipo}: {item.qtd}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Presença em Plenário */}
@@ -276,11 +306,11 @@ const PerfilDeputado = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span>Ausências Justificadas:</span>
-                  <span style={{ color: '#f9fafb', fontWeight: 500 }}>{desempenho.plenario_ausencias_justificadas}</span>
+                  <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{desempenho.plenario_ausencias_justificadas}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span>Ausências Não Justificadas:</span>
-                  <span style={{ color: desempenho.plenario_ausencias_nao_justificadas > 0 ? '#ef4444' : '#10b981', fontWeight: 500 }}>{desempenho.plenario_ausencias_nao_justificadas}</span>
+                  <span style={{ color: desempenho.plenario_ausencias_nao_justificadas > 0 ? '#ef4444' : 'var(--text-primary)', fontWeight: 500 }}>{desempenho.plenario_ausencias_nao_justificadas}</span>
                 </div>
               </div>
             </div>
@@ -297,11 +327,11 @@ const PerfilDeputado = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span>Ausências Justificadas:</span>
-                  <span style={{ color: '#f9fafb', fontWeight: 500 }}>{desempenho.comissoes_ausencias_justificadas}</span>
+                  <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{desempenho.comissoes_ausencias_justificadas}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span>Ausências Não Justificadas:</span>
-                  <span style={{ color: desempenho.comissoes_ausencias_nao_justificadas > 0 ? '#ef4444' : '#10b981', fontWeight: 500 }}>{desempenho.comissoes_ausencias_nao_justificadas}</span>
+                  <span style={{ color: desempenho.comissoes_ausencias_nao_justificadas > 0 ? '#ef4444' : 'var(--text-primary)', fontWeight: 500 }}>{desempenho.comissoes_ausencias_nao_justificadas}</span>
                 </div>
               </div>
             </div>
@@ -342,8 +372,8 @@ const PerfilDeputado = () => {
                   </Pie>
                   <RechartsTooltip
                     formatter={(value) => [`R$ ${value.toLocaleString('pt-BR')}`, 'Gasto']}
-                    contentStyle={{ backgroundColor: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f9fafb' }}
-                    itemStyle={{ color: '#fff' }}
+                    contentStyle={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)' }}
+                    itemStyle={{ color: 'var(--text-primary)' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
