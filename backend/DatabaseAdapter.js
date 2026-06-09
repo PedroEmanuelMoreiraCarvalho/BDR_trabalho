@@ -530,7 +530,14 @@ class DatabaseAdapter {
         values.push(filtroTema);
       }
       if (busca.trim() !== '') {
-        whereExtra += ` AND (p.ementa ILIKE $${paramCount} OR p.ementa_detalhada ILIKE $${paramCount})`;
+        whereExtra += ` AND (
+          p.ementa ILIKE $${paramCount} 
+          OR p.ementa_detalhada ILIKE $${paramCount}
+          OR p.sigla_tipo_proposicao ILIKE $${paramCount}
+          OR CAST(p.numero_proposicao AS TEXT) ILIKE $${paramCount}
+          OR CONCAT(p.sigla_tipo_proposicao, ' ', p.numero_proposicao) ILIKE $${paramCount}
+          OR CONCAT(p.sigla_tipo_proposicao, p.numero_proposicao) ILIKE $${paramCount}
+        )`;
         values.push(`%${busca.trim()}%`);
         paramCount++;
       }
@@ -540,14 +547,23 @@ class DatabaseAdapter {
 
       // Query de contagem total para paginação
       const countQuery = `
-        SELECT COUNT(DISTINCT vv.id_votacao) AS total,
-               array_agg(DISTINCT pt.tema) FILTER (WHERE pt.tema IS NOT NULL AND pt.tema != '') AS temas
+        SELECT COUNT(DISTINCT vv.id_votacao) AS total
         FROM votacoes_votos vv
         JOIN votacao v ON vv.id_votacao = v.id_votacao
         JOIN proposicoes p ON v.id_proposicao = p.id_proposicao
         LEFT JOIN proposicoes_temas pt ON p.id_proposicao = pt.id_proposicao
         WHERE vv.id_deputado = $1
         ${whereExtra}
+      `;
+
+      // Query separada para buscar TODOS os temas desse deputado independentemente da busca atual
+      const temasQuery = `
+        SELECT array_agg(DISTINCT pt.tema) FILTER (WHERE pt.tema IS NOT NULL AND pt.tema != '') AS temas
+        FROM votacoes_votos vv
+        JOIN votacao v ON vv.id_votacao = v.id_votacao
+        JOIN proposicoes p ON v.id_proposicao = p.id_proposicao
+        LEFT JOIN proposicoes_temas pt ON p.id_proposicao = pt.id_proposicao
+        WHERE vv.id_deputado = $1
       `;
 
       // Query principal de dados paginados
@@ -557,6 +573,8 @@ class DatabaseAdapter {
           TO_CHAR(v.data_votacao, 'DD/MM/YYYY') AS data_votacao,
           p.ementa AS descricao,
           p.ementa_detalhada AS ementa,
+          p.sigla_tipo_proposicao AS sigla,
+          p.numero_proposicao AS numero,
           vv.voto,
           MAX(pt.tema) AS tema
         FROM votacoes_votos vv
@@ -565,21 +583,22 @@ class DatabaseAdapter {
         LEFT JOIN proposicoes_temas pt ON p.id_proposicao = pt.id_proposicao
         WHERE vv.id_deputado = $1
         ${whereExtra}
-        GROUP BY vv.id_votacao, v.data_votacao, p.ementa, p.ementa_detalhada, vv.voto
+        GROUP BY vv.id_votacao, v.data_votacao, p.ementa, p.ementa_detalhada, p.sigla_tipo_proposicao, p.numero_proposicao, vv.voto
         ORDER BY v.data_votacao DESC
         LIMIT ${limit} OFFSET ${offset}
       `;
 
-      const [countResult, dataResult] = await Promise.all([
+      const [countResult, dataResult, temasResult] = await Promise.all([
         this.client.query(countQuery, values),
-        this.client.query(dataQuery, values)
+        this.client.query(dataQuery, values),
+        this.client.query(temasQuery, [id])
       ]);
 
       const total = parseInt(countResult.rows[0].total);
       const total_paginas = Math.ceil(total / limit);
 
       // Monta lista de temas disponíveis para o filtro (incluindo 'Todos' no topo)
-      const temasRaw = countResult.rows[0].temas || [];
+      const temasRaw = temasResult.rows[0].temas || [];
       const temas_disponiveis = ['Todos', ...temasRaw.sort()];
 
       return {

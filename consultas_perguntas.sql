@@ -1,4 +1,4 @@
--- Consultas para responder perguntas: 1,2,3,4,5,10,12,13
+-- Consultas para responder perguntas: 1,2,3,4,5,6,7,10,12,13
 -- Ajuste filtros opcionais (ex.: :ano, :uf, :partido, :deputado_id, :tema)
 
 -- 1) Deputados ordenados por gastos

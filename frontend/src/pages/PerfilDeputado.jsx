@@ -58,6 +58,7 @@ const PerfilDeputado = () => {
   }, [id]);
 
   useEffect(() => {
+    let ignore = false;
     const fetchVotacoes = async () => {
       try {
         const votacoesData = await DashboardAdapter.getPerfilVotacoes(id, {
@@ -66,17 +67,20 @@ const PerfilDeputado = () => {
           filtroTema,
           busca: buscaVotacao
         });
-        setVotacoes(votacoesData.data);
-        setTotalVotacoes(votacoesData.total);
-        if (votacoesData.temas_disponiveis) {
-          setTemasDisponiveis(votacoesData.temas_disponiveis);
+        if (!ignore) {
+          setVotacoes(votacoesData.data);
+          setTotalVotacoes(votacoesData.total);
+          if (votacoesData.temas_disponiveis) {
+            setTemasDisponiveis(votacoesData.temas_disponiveis);
+          }
         }
       } catch (error) {
-        console.error("Erro ao buscar votações:", error);
+        if (!ignore) console.error("Erro ao buscar votações:", error);
       }
     };
 
     fetchVotacoes();
+    return () => { ignore = true; };
   }, [id, paginaAtual, filtroTema, buscaVotacao]);
 
   const calcularPercentualRanking = (posicao, total) => {
@@ -435,7 +439,7 @@ const PerfilDeputado = () => {
                       {index + 1}. {fornecedor.fornecedor_nome}
                     </span>
                     <span className="text-gradient" style={{ fontSize: '0.875rem', fontWeight: 600 }}>
-                      R$ {(fornecedor.total_gasto / 1000).toLocaleString('pt-BR')}k
+                      R$ {fornecedor.total_gasto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
                   <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
@@ -468,7 +472,7 @@ const PerfilDeputado = () => {
                 <select
                   value={filtroTema}
                   onChange={e => { setFiltroTema(e.target.value); setPaginaAtual(1); }}
-                  style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontSize: '0.875rem', cursor: 'pointer' }}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontSize: '0.875rem', cursor: 'pointer', minWidth: '120px', maxWidth: '200px' }}
                 >
                   {temasDisponiveis.map(tema => (
                     <option key={tema} value={tema} style={{ background: 'var(--bg-surface)' }}>{tema}</option>
@@ -494,6 +498,11 @@ const PerfilDeputado = () => {
                       {voto.tema}
                     </span>
                   </div>
+                  {voto.sigla && voto.numero && (
+                    <p style={{ margin: '0 0 4px 0', fontWeight: 600, color: 'var(--accent-primary)', fontSize: '0.85rem' }}>
+                      {voto.sigla} {voto.numero}
+                    </p>
+                  )}
                   <p style={{ margin: 0, fontWeight: 500, color: 'var(--text-primary)', fontSize: '0.9rem' }}>{voto.descricao}</p>
 
                   {voto.ementa && (

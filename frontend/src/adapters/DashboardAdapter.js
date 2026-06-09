@@ -376,11 +376,11 @@ class DashboardAdapter {
     if (USE_MOCK) {
       return new Promise((resolve) => setTimeout(() => {
         const MOCK_VOTACOES = [
-          { id: 101, data_votacao: '15/10/2023', descricao: 'PL 1234/2023 - Reforma Tributária', ementa: 'Altera o sistema tributário nacional...', voto: 'Sim', tema: 'Economia' },
-          { id: 102, data_votacao: '22/09/2023', descricao: 'PEC 45/2019 - Teto de Gastos', ementa: 'Modifica regras fiscais...', voto: 'Não', tema: 'Economia' },
-          { id: 103, data_votacao: '05/08/2023', descricao: 'PL 567/2023 - Educação Básica', ementa: 'Aumenta repasses para estados...', voto: 'Sim', tema: 'Educação' },
-          { id: 104, data_votacao: '12/07/2023', descricao: 'PL 890/2023 - Segurança nas Fronteiras', ementa: 'Aumenta efetivo nas fronteiras...', voto: 'Sim', tema: 'Segurança' },
-          { id: 105, data_votacao: '30/06/2023', descricao: 'MP 1150/2023 - Meio Ambiente', ementa: 'Altera o código florestal...', voto: 'Não', tema: 'Meio Ambiente' }
+          { id: 101, data_votacao: '15/10/2023', sigla: 'PL', numero: 1234, descricao: 'PL 1234/2023 - Reforma Tributária', ementa: 'Altera o sistema tributário nacional...', voto: 'Sim', tema: 'Economia' },
+          { id: 102, data_votacao: '22/09/2023', sigla: 'PEC', numero: 45, descricao: 'PEC 45/2019 - Teto de Gastos', ementa: 'Modifica regras fiscais...', voto: 'Não', tema: 'Economia' },
+          { id: 103, data_votacao: '05/08/2023', sigla: 'PL', numero: 567, descricao: 'PL 567/2023 - Educação Básica', ementa: 'Aumenta repasses para estados...', voto: 'Sim', tema: 'Educação' },
+          { id: 104, data_votacao: '12/07/2023', sigla: 'PL', numero: 890, descricao: 'PL 890/2023 - Segurança nas Fronteiras', ementa: 'Aumenta efetivo nas fronteiras...', voto: 'Sim', tema: 'Segurança' },
+          { id: 105, data_votacao: '30/06/2023', sigla: 'MP', numero: 1150, descricao: 'MP 1150/2023 - Meio Ambiente', ementa: 'Altera o código florestal...', voto: 'Não', tema: 'Meio Ambiente' }
         ];
 
         let filtradas = MOCK_VOTACOES.filter(v => {
