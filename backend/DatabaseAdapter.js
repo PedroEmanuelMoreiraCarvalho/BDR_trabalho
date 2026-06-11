@@ -856,134 +856,79 @@ FROM proposicoes_autores
 GROUP BY id_proposicao
 ),
 
+proposicoes_por_categoria AS (
+SELECT
+    pa.id_deputado,
+    (
+        CASE
+            WHEN p.sigla_tipo_proposicao IN ('PEC', 'PLP', 'PL', 'MPV', 'PLV')
+                THEN 'Legislativo estrutural'
+            WHEN p.sigla_tipo_proposicao IN (
+                'PDL', 'PRC', 'PLN', 'EMC', 'EMP', 'EMR', 'EMS', 'EMA',
+                'EML', 'EMO', 'ESB', 'SBE', 'SBE-A', 'SBT', 'SBT-A',
+                'SBR', 'SSP', 'ERD'
+            )
+                THEN 'Legislativo complementar'
+            WHEN p.sigla_tipo_proposicao IN ('PFC', 'RIC', 'RCP', 'SIT')
+                THEN 'Fiscalização e controle'
+            WHEN p.sigla_tipo_proposicao = 'INC'
+                THEN 'Indução administrativa'
+            WHEN p.sigla_tipo_proposicao IN (
+                'REQ', 'REC', 'RPD', 'RPDR', 'DTQ', 'PPP', 'PIN', 'PRR', 'RRC'
+            )
+                THEN 'Procedimental'
+            ELSE 'Outros'
+        END
+    ) AS categoria,
+    COUNT(DISTINCT pa.id_proposicao) AS total_proposicoes_cat,
+    SUM(
+        (
+            CASE
+                WHEN p.sigla_tipo_proposicao = 'PEC' THEN 30.0
+                WHEN p.sigla_tipo_proposicao = 'PLP' THEN 25.0
+                WHEN p.sigla_tipo_proposicao IN ('MPV', 'PLV', 'RCP') THEN 20.0
+                WHEN p.sigla_tipo_proposicao = 'PL' THEN 15.0
+                WHEN p.sigla_tipo_proposicao IN ('PDL', 'PFC', 'PLN') THEN 10.0
+                WHEN p.sigla_tipo_proposicao = 'PRC' THEN 8.0
+                WHEN p.sigla_tipo_proposicao = 'SIT' THEN 5.0
+                WHEN p.sigla_tipo_proposicao = 'RIC' THEN 2.0
+                WHEN p.sigla_tipo_proposicao = 'INC' THEN 0.5
+                WHEN p.sigla_tipo_proposicao IN ('EMC', 'EMP', 'EMR', 'EMS', 'EMA', 'EML', 'EMO', 'ESB', 'SBE', 'SBE-A', 'SBT', 'SBT-A', 'SBR', 'SSP', 'ERD') THEN 3.0
+                WHEN p.sigla_tipo_proposicao IN ('REQ', 'REC', 'RPD', 'RPDR', 'DTQ', 'PPP', 'PIN', 'PRR', 'RRC') THEN 0.2
+                ELSE 0.1
+            END
+        )
+        *
+        (
+            CASE
+                WHEN p.ultimo_status_id_situacao IN (1140) THEN 1.0
+                WHEN p.ultimo_status_id_situacao IN (900, 926, 1150, 1293, 939) THEN 0.8
+                WHEN p.ultimo_status_id_situacao IN (923, 941, 950, 1120, 1222, 1292) THEN 0.1
+                ELSE 0.3
+            END
+        )
+        *
+        (
+            CASE
+                WHEN a.qtd_autores = 1 THEN 1.0
+                WHEN pa.ordem_assinatura = 1 THEN 0.5
+                ELSE 0.5 / NULLIF(a.qtd_autores - 1,0)
+            END
+        )
+    ) AS score_categoria
+FROM proposicoes_autores pa
+JOIN proposicoes p ON p.id_proposicao = pa.id_proposicao
+JOIN autoria a ON a.id_proposicao = pa.id_proposicao
+GROUP BY pa.id_deputado, categoria
+),
+
 proposicoes_score AS (
 SELECT
-pa.id_deputado,
-COUNT(DISTINCT pa.id_proposicao) AS total_proposicoes,
-SUM(
-/* ==========================
-   PESO DO TIPO
-   ========================== */
-(
-    CASE
-        /* Muito relevantes */
-        WHEN p.sigla_tipo_proposicao = 'PEC'
-            THEN 20.0
-        WHEN p.sigla_tipo_proposicao = 'PL'
-            THEN 15.0
-        /* Relevantes */
-        WHEN p.sigla_tipo_proposicao IN (
-            'PLP',
-            'MPV',
-            'PDL',
-            'PRC',
-            'PLV',
-            'PLN'
-        )
-            THEN 10.0
-        /* Fiscalização */
-        WHEN p.sigla_tipo_proposicao IN (
-            'PFC',
-            'RIC',
-            'RCP',
-            'INC',
-            'SIT'
-        )
-            THEN 5.0
-        /* Emendas */
-        WHEN p.sigla_tipo_proposicao IN (
-            'EMC',
-            'EMP',
-            'EMR',
-            'EMS',
-            'EMA',
-            'EML',
-            'EMO',
-            'ESB',
-            'SBE',
-            'SBE-A',
-            'SBT',
-            'SBT-A',
-            'SBR',
-            'SSP',
-            'ERD'
-        )
-            THEN 2.0
-        /* Processuais */
-        WHEN p.sigla_tipo_proposicao IN (
-            'REQ',
-            'REC',
-            'RPD',
-            'RPDR',
-            'DTQ',
-            'PPP',
-            'PIN',
-            'PRR',
-            'RRC'
-        )
-            THEN 1.0
-        /* Restante */
-        ELSE 0.1
-    END
-)
-*
-/* ==========================
-   SITUAÇÃO
-   ========================== */
-(
-    CASE
-        /* APROVADA */
-        WHEN p.ultimo_status_id_situacao IN (
-            1140
-        )
-            THEN 1.00
-        /* AVANÇADA */
-        WHEN p.ultimo_status_id_situacao IN (
-            900,
-            926,
-            1150,
-            1293,
-            939
-        )
-            THEN 0.75
-        /* REJEITADA */
-        WHEN p.ultimo_status_id_situacao IN (
-            923,
-            941,
-            950,
-            1120,
-            1222,
-            1292
-        )
-            THEN 0.00
-        /* EM TRAMITAÇÃO */
-        ELSE 0.25
-    END
-)
-*
-/* ==========================
-   AUTORIA
-   ========================== */
-(
-    CASE
-        /* Autor único */
-        WHEN a.qtd_autores = 1
-            THEN 1.0
-        /* Autor principal */
-        WHEN pa.ordem_assinatura = 1
-            THEN 0.5
-        /* Coautores dividem os 50% restantes */
-        ELSE
-            0.5 / NULLIF(a.qtd_autores - 1,0)
-    END
-)
-) AS score_proposicoes
-FROM proposicoes_autores pa
-JOIN proposicoes p
-    ON p.id_proposicao = pa.id_proposicao
-JOIN autoria a
-    ON a.id_proposicao = pa.id_proposicao
-GROUP BY pa.id_deputado
+    id_deputado,
+    SUM(total_proposicoes_cat) AS total_proposicoes,
+    SUM(score_categoria ^ 0.75) AS score_proposicoes
+FROM proposicoes_por_categoria
+GROUP BY id_deputado
 ),
 
 presencas AS (
@@ -1057,7 +1002,7 @@ ROUND(b.score_plenario,2) AS score_plenario,
 ROUND(b.score_comissoes,2) AS score_comissoes,
 ROUND(b.beneficio_score,2) AS beneficio_score,
 ROUND((b.beneficio_score / (b.beneficio_score + p.p25_beneficio))::numeric,4) AS fator_atividade,
-ROUND((b.beneficio_score * (b.beneficio_score / (b.beneficio_score + p.p25_beneficio)) / (1 + (b.total_gasto / 1000.0)))::numeric,4) AS indice_eficiencia
+ROUND((b.beneficio_score * (b.beneficio_score / (b.beneficio_score + p.p25_beneficio)) / ((1 + (b.total_gasto / 1000.0)) ^ 0.75))::numeric,4) AS indice_eficiencia
 FROM beneficios b
 CROSS JOIN p25 p
 ${whereClause}
@@ -1242,49 +1187,77 @@ LIMIT $1 OFFSET $2
             FROM proposicoes_autores
             GROUP BY id_proposicao
         ),
-        proposicoes_score AS (
+        proposicoes_por_categoria AS (
             SELECT
                 pa.id_deputado,
-                COUNT(DISTINCT pa.id_proposicao) AS total_proposicoes,
-                COUNT(DISTINCT CASE WHEN p.ultimo_status_id_situacao = 1140 THEN pa.id_proposicao END) AS proposicoes_aprovadas,
-                COUNT(DISTINCT CASE WHEN p.ultimo_status_id_situacao IN (900, 926, 1150, 1293, 939) THEN pa.id_proposicao END) AS proposicoes_avancadas,
+                (
+                    CASE
+                        WHEN p.sigla_tipo_proposicao IN ('PEC', 'PLP', 'PL', 'MPV', 'PLV') THEN 'Legislativo estrutural'
+                        WHEN p.sigla_tipo_proposicao IN (
+                            'PDL', 'PRC', 'PLN', 'EMC', 'EMP', 'EMR', 'EMS', 'EMA',
+                            'EML', 'EMO', 'ESB', 'SBE', 'SBE-A', 'SBT', 'SBT-A',
+                            'SBR', 'SSP', 'ERD'
+                        ) THEN 'Legislativo complementar'
+                        WHEN p.sigla_tipo_proposicao IN ('PFC', 'RIC', 'RCP', 'SIT') THEN 'Fiscalização e controle'
+                        WHEN p.sigla_tipo_proposicao = 'INC' THEN 'Indução administrativa'
+                        WHEN p.sigla_tipo_proposicao IN (
+                            'REQ', 'REC', 'RPD', 'RPDR', 'DTQ', 'PPP', 'PIN', 'PRR', 'RRC'
+                        ) THEN 'Procedimental'
+                        ELSE 'Outros'
+                    END
+                ) AS categoria,
+                COUNT(DISTINCT pa.id_proposicao) AS total_proposicoes_cat,
+                COUNT(DISTINCT CASE WHEN p.ultimo_status_id_situacao = 1140 THEN pa.id_proposicao END) AS aprovadas_cat,
+                COUNT(DISTINCT CASE WHEN p.ultimo_status_id_situacao IN (900, 926, 1150, 1293, 939) THEN pa.id_proposicao END) AS avancadas_cat,
                 SUM(
-                    /* PESO DO TIPO */
                     (
                         CASE
-                            WHEN p.sigla_tipo_proposicao = 'PEC' THEN 20.0
+                            WHEN p.sigla_tipo_proposicao = 'PEC' THEN 30.0
+                            WHEN p.sigla_tipo_proposicao = 'PLP' THEN 25.0
+                            WHEN p.sigla_tipo_proposicao IN ('MPV', 'PLV', 'RCP') THEN 20.0
                             WHEN p.sigla_tipo_proposicao = 'PL' THEN 15.0
-                            WHEN p.sigla_tipo_proposicao IN ('PLP','MPV','PDL','PRC','PLV','PLN') THEN 10.0
-                            WHEN p.sigla_tipo_proposicao IN ('PFC','RIC','RCP','INC','SIT') THEN 5.0
-                            WHEN p.sigla_tipo_proposicao IN ('EMC','EMP','EMR','EMS','EMA','EML','EMO','ESB','SBE','SBE-A','SBT','SBT-A','SBR','SSP','ERD') THEN 2.0
-                            WHEN p.sigla_tipo_proposicao IN ('REQ','REC','RPD','RPDR','DTQ','PPP','PIN','PRR','RRC') THEN 1.0
+                            WHEN p.sigla_tipo_proposicao IN ('PDL', 'PFC', 'PLN') THEN 10.0
+                            WHEN p.sigla_tipo_proposicao = 'PRC' THEN 8.0
+                            WHEN p.sigla_tipo_proposicao = 'SIT' THEN 5.0
+                            WHEN p.sigla_tipo_proposicao = 'RIC' THEN 2.0
+                            WHEN p.sigla_tipo_proposicao = 'INC' THEN 0.5
+                            WHEN p.sigla_tipo_proposicao IN ('EMC', 'EMP', 'EMR', 'EMS', 'EMA', 'EML', 'EMO', 'ESB', 'SBE', 'SBE-A', 'SBT', 'SBT-A', 'SBR', 'SSP', 'ERD') THEN 3.0
+                            WHEN p.sigla_tipo_proposicao IN ('REQ', 'REC', 'RPD', 'RPDR', 'DTQ', 'PPP', 'PIN', 'PRR', 'RRC') THEN 0.2
                             ELSE 0.1
                         END
                     )
                     *
-                    /* SITUAÇÃO */
                     (
                         CASE
-                            WHEN p.ultimo_status_id_situacao IN (1140) THEN 1.00
-                            WHEN p.ultimo_status_id_situacao IN (900,926,1150,1293,939) THEN 0.75
-                            WHEN p.ultimo_status_id_situacao IN (923,941,950,1120,1222,1292) THEN 0.00
-                            ELSE 0.25
+                            WHEN p.ultimo_status_id_situacao IN (1140) THEN 1.0
+                            WHEN p.ultimo_status_id_situacao IN (900, 926, 1150, 1293, 939) THEN 0.8
+                            WHEN p.ultimo_status_id_situacao IN (923, 941, 950, 1120, 1222, 1292) THEN 0.1
+                            ELSE 0.3
                         END
                     )
                     *
-                    /* AUTORIA */
                     (
                         CASE
                             WHEN a.qtd_autores = 1 THEN 1.0
                             WHEN pa.ordem_assinatura = 1 THEN 0.5
-                            ELSE 0.5 / NULLIF(a.qtd_autores - 1,0)
+                            ELSE 0.5 / NULLIF(a.qtd_autores - 1, 0)
                         END
                     )
-                ) AS score_proposicoes
+                ) AS score_categoria
             FROM proposicoes_autores pa
             JOIN proposicoes p ON p.id_proposicao = pa.id_proposicao
             JOIN autoria a ON a.id_proposicao = pa.id_proposicao
-            GROUP BY pa.id_deputado
+            GROUP BY pa.id_deputado, categoria
+        ),
+        proposicoes_score AS (
+            SELECT
+                id_deputado,
+                SUM(total_proposicoes_cat) AS total_proposicoes,
+                SUM(aprovadas_cat) AS proposicoes_aprovadas,
+                SUM(avancadas_cat) AS proposicoes_avancadas,
+                SUM(score_categoria ^ 0.75) AS score_proposicoes
+            FROM proposicoes_por_categoria
+            GROUP BY id_deputado
         ),
         presencas AS (
             SELECT
@@ -1380,7 +1353,7 @@ LIMIT $1 OFFSET $2
             ROUND(b.score_comissoes,2) AS score_comissoes,
             ROUND(b.beneficio_score,2) AS beneficio_score,
             ROUND((b.beneficio_score / (b.beneficio_score + p.p25_beneficio))::numeric,4) AS fator_atividade,
-            ROUND((b.beneficio_score * (b.beneficio_score / (b.beneficio_score + p.p25_beneficio)) / (1 + (b.total_gasto / 1000.0)))::numeric,4) AS indice_eficiencia,
+            ROUND((b.beneficio_score * (b.beneficio_score / (b.beneficio_score + p.p25_beneficio)) / ((1 + (b.total_gasto / 1000.0)) ^ 0.75))::numeric,4) AS indice_eficiencia,
             
             COALESCE(pr.plenario_presencas, 0) AS plenario_presencas,
             COALESCE(pr.plenario_ausencias_justificadas, 0) AS plenario_ausencias_justificadas,
@@ -1435,29 +1408,50 @@ LIMIT $1 OFFSET $2
         FROM proposicoes_autores
         GROUP BY id_proposicao
       ),
-      proposicoes_score AS (
+      proposicoes_por_categoria AS (
         SELECT
           pa.id_deputado,
-          COUNT(DISTINCT pa.id_proposicao) AS total_proposicoes,
+          (
+            CASE
+              WHEN p.sigla_tipo_proposicao IN ('PEC', 'PLP', 'PL', 'MPV', 'PLV') THEN 'Legislativo estrutural'
+              WHEN p.sigla_tipo_proposicao IN (
+                'PDL', 'PRC', 'PLN', 'EMC', 'EMP', 'EMR', 'EMS', 'EMA',
+                'EML', 'EMO', 'ESB', 'SBE', 'SBE-A', 'SBT', 'SBT-A',
+                'SBR', 'SSP', 'ERD'
+              ) THEN 'Legislativo complementar'
+              WHEN p.sigla_tipo_proposicao IN ('PFC', 'RIC', 'RCP', 'SIT') THEN 'Fiscalização e controle'
+              WHEN p.sigla_tipo_proposicao = 'INC' THEN 'Indução administrativa'
+              WHEN p.sigla_tipo_proposicao IN (
+                'REQ', 'REC', 'RPD', 'RPDR', 'DTQ', 'PPP', 'PIN', 'PRR', 'RRC'
+              ) THEN 'Procedimental'
+              ELSE 'Outros'
+            END
+          ) AS categoria,
+          COUNT(DISTINCT pa.id_proposicao) AS total_proposicoes_cat,
           SUM(
             (
               CASE
-                WHEN p.sigla_tipo_proposicao = 'PEC' THEN 20.0
+                WHEN p.sigla_tipo_proposicao = 'PEC' THEN 30.0
+                WHEN p.sigla_tipo_proposicao = 'PLP' THEN 25.0
+                WHEN p.sigla_tipo_proposicao IN ('MPV', 'PLV', 'RCP') THEN 20.0
                 WHEN p.sigla_tipo_proposicao = 'PL' THEN 15.0
-                WHEN p.sigla_tipo_proposicao IN ('PLP', 'MPV', 'PDL', 'PRC', 'PLV', 'PLN') THEN 10.0
-                WHEN p.sigla_tipo_proposicao IN ('PFC', 'RIC', 'RCP', 'INC', 'SIT') THEN 5.0
-                WHEN p.sigla_tipo_proposicao IN ('EMC', 'EMP', 'EMR', 'EMS', 'EMA', 'EML', 'EMO', 'ESB', 'SBE', 'SBE-A', 'SBT', 'SBT-A', 'SBR', 'SSP', 'ERD') THEN 2.0
-                WHEN p.sigla_tipo_proposicao IN ('REQ', 'REC', 'RPD', 'RPDR', 'DTQ', 'PPP', 'PIN', 'PRR', 'RRC') THEN 1.0
+                WHEN p.sigla_tipo_proposicao IN ('PDL', 'PFC', 'PLN') THEN 10.0
+                WHEN p.sigla_tipo_proposicao = 'PRC' THEN 8.0
+                WHEN p.sigla_tipo_proposicao = 'SIT' THEN 5.0
+                WHEN p.sigla_tipo_proposicao = 'RIC' THEN 2.0
+                WHEN p.sigla_tipo_proposicao = 'INC' THEN 0.5
+                WHEN p.sigla_tipo_proposicao IN ('EMC', 'EMP', 'EMR', 'EMS', 'EMA', 'EML', 'EMO', 'ESB', 'SBE', 'SBE-A', 'SBT', 'SBT-A', 'SBR', 'SSP', 'ERD') THEN 3.0
+                WHEN p.sigla_tipo_proposicao IN ('REQ', 'REC', 'RPD', 'RPDR', 'DTQ', 'PPP', 'PIN', 'PRR', 'RRC') THEN 0.2
                 ELSE 0.1
               END
             )
             *
             (
               CASE
-                WHEN p.ultimo_status_id_situacao IN (1140) THEN 1.00
-                WHEN p.ultimo_status_id_situacao IN (900, 926, 1150, 1293, 939) THEN 0.75
-                WHEN p.ultimo_status_id_situacao IN (923, 941, 950, 1120, 1222, 1292) THEN 0.00
-                ELSE 0.25
+                WHEN p.ultimo_status_id_situacao IN (1140) THEN 1.0
+                WHEN p.ultimo_status_id_situacao IN (900, 926, 1150, 1293, 939) THEN 0.8
+                WHEN p.ultimo_status_id_situacao IN (923, 941, 950, 1120, 1222, 1292) THEN 0.1
+                ELSE 0.3
               END
             )
             *
@@ -1468,11 +1462,19 @@ LIMIT $1 OFFSET $2
                 ELSE 0.5 / NULLIF(a.qtd_autores - 1, 0)
               END
             )
-          ) AS score_proposicoes
+          ) AS score_categoria
         FROM proposicoes_autores pa
         JOIN proposicoes p ON p.id_proposicao = pa.id_proposicao
         JOIN autoria a ON a.id_proposicao = pa.id_proposicao
-        GROUP BY pa.id_deputado
+        GROUP BY pa.id_deputado, categoria
+      ),
+      proposicoes_score AS (
+        SELECT
+          id_deputado,
+          SUM(total_proposicoes_cat) AS total_proposicoes,
+          SUM(score_categoria ^ 0.75) AS score_proposicoes
+        FROM proposicoes_por_categoria
+        GROUP BY id_deputado
       ),
       presencas AS (
         SELECT
@@ -1527,7 +1529,7 @@ LIMIT $1 OFFSET $2
         SELECT
           b.id_deputado,
           ROW_NUMBER() OVER (ORDER BY (
-            ROUND((b.beneficio_score * (b.beneficio_score / (b.beneficio_score + p.p25_beneficio)) / (1 + (b.total_gasto / 1000.0)))::numeric, 4)
+            ROUND((b.beneficio_score * (b.beneficio_score / (b.beneficio_score + p.p25_beneficio)) / ((1 + (b.total_gasto / 1000.0)) ^ 0.75))::numeric, 4)
           ) DESC) AS posicao,
           COUNT(*) OVER () AS total_deputados
         FROM beneficios b
