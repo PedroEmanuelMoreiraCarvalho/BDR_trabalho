@@ -1,2 +1,5 @@
 dados_finais
 logs
+venv
+.venv
+auxiliar/
