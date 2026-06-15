@@ -2336,11 +2336,13 @@ if __name__ == "__main__":
     print(f"Host: {DB_CONFIG['host']}:{DB_CONFIG['port']}")
     print(f"Banco alvo: {NOME_BANCO}")
     print("-" * 50)
+
+    # Comente e descomente as linhas que achar necessário abaixo
     
     arquivo_deputados_csv = r'dados_finais\deputados.csv'
     carregar_deputados(arquivo_deputados_csv)
     arquivo_votacao_csv = r'dados_finais\votacoes.csv'  
-    carregar_votacao(arquivo_votacao_csv)`1`
+    carregar_votacao(arquivo_votacao_csv)
     arquivo_orientacao_csv = r'dados_finais\votacoes_orientacoes.csv' #ainda contaminados (fk's inexistentes)
     carregar_votacoes_orientacoes(arquivo_orientacao_csv)
     arquivo_votos_csv = r'dados_finais\votacoes_votos.csv'
