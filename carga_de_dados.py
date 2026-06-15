@@ -2307,6 +2307,30 @@ def carregar_proposicoes(caminho_arquivo):
         if conn:
             conn.rollback()
 
+def atualizar_views():
+    """Atualiza as views materializadas no banco de dados"""
+    conn = None
+    try:
+        conn_config = {
+            'host': DB_CONFIG['host'],
+            'port': DB_CONFIG['port'],
+            'database': NOME_BANCO,
+            'user': DB_CONFIG['user'],
+            'password': DB_CONFIG['password']
+        }
+        conn = psycopg2.connect(**conn_config)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = conn.cursor()
+        print("\n🔄 Atualizando a view materializada 'mv_deputados_consolidado'...")
+        cursor.execute("REFRESH MATERIALIZED VIEW mv_deputados_consolidado;")
+        print("✅ View materializada atualizada com sucesso!")
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"⚠️ Erro ao atualizar view materializada: {e}")
+        if conn:
+            conn.close()
+
 if __name__ == "__main__":
     print("=== Carga de Deputados ===")
     print(f"Host: {DB_CONFIG['host']}:{DB_CONFIG['port']}")
@@ -2335,3 +2359,6 @@ if __name__ == "__main__":
     carregar_proposicoes_autores(arquivo_proposicoes_autores_csv)
     arquivo_proposicoes_temas_csv = r'dados_finais\proposicoes_temas.csv' #ainda contaminados (fk's inexistentes)
     carregar_proposicoes_temas(arquivo_proposicoes_temas_csv)
+
+    # Atualiza as views materializadas após carregar os dados
+    atualizar_views()
