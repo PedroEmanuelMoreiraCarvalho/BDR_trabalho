@@ -35,8 +35,8 @@ const Sidebar = () => {
     <aside className="sidebar glass-panel" style={{ display: 'flex', flexDirection: 'column', height: '100vh', justifyContent: 'space-between' }}>
       <div>
         <div className="sidebar-header">
-          <h2 className="text-gradient">BDR Analytics</h2>
-          <p className="subtitle">Observatório Político</p>
+          <h2 className="text-gradient">Observatório Político</h2>
+          <p className="subtitle">Análise da Câmara dos Deputados</p>
         </div>
 
         <nav className="sidebar-nav">
