@@ -526,10 +526,18 @@ const DashboardNacional = () => {
             <ResponsiveContainer>
               <BarChart
                 data={dataCorrelacao}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="escolaridade" stroke="var(--text-primary)" tick={{ fill: 'var(--text-primary)', fontSize: 9 }} interval={0} axisLine={false} tickLine={false} />
+                <XAxis
+                  dataKey="escolaridade"
+                  stroke="var(--text-primary)"
+                  tick={{ fill: 'var(--text-primary)', fontSize: 10.5, angle: -45, textAnchor: 'end' }}
+                  height={80}
+                  interval={0}
+                  axisLine={false}
+                  tickLine={false}
+                />
                 <YAxis
                   stroke="var(--text-primary)"
                   tick={{ fill: 'var(--text-primary)', fontSize: 12 }}

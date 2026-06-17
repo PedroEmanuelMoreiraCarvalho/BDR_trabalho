@@ -244,10 +244,17 @@ const VisaoPartidaria = () => {
           <ResponsiveContainer>
             <BarChart
               data={dataComparacaoSorted}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
-              <XAxis dataKey="partido" stroke="var(--text-primary)" tick={{ fill: 'var(--text-primary)', fontSize: 12 }} axisLine={false} tickLine={false} />
+              <XAxis
+                dataKey="partido"
+                stroke="var(--text-primary)"
+                tick={{ fill: 'var(--text-primary)', fontSize: 10, angle: -45, textAnchor: 'end' }}
+                height={60}
+                axisLine={false}
+                tickLine={false}
+              />
               <YAxis stroke="var(--text-primary)" tick={{ fill: 'var(--text-primary)', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={formatComparacaoYAxis} />
               <Tooltip content={<CustomComparacaoTooltip metric={comparacaoMetric} />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
               <Bar dataKey={comparacaoMetric} radius={[4, 4, 0, 0]}>
