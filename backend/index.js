@@ -8,6 +8,10 @@ const port = process.env.PORT || 3000; // changed to avoid port conflict
 
 app.use(cors());
 app.use(express.json());
+app.use((req, res, next) => {
+  req.body = req.body || {};
+  next();
+});
 
 async function startServer() {
   try {
