@@ -336,7 +336,7 @@ class DatabaseAdapter {
         WITH gastos_partido AS (
             SELECT d.ultimo_status_sigla_partido AS partido, SUM(des.valor_liquido) AS gastos
             FROM despesas des
-            JOIN deputados d ON des.id_deputado = des.id_deputado
+            JOIN deputados d ON des.id_deputado = d.id_deputado
             WHERE d.ultimo_status_sigla_partido IS NOT NULL AND d.ultimo_status_sigla_partido != ''
             GROUP BY d.ultimo_status_sigla_partido
         ),
