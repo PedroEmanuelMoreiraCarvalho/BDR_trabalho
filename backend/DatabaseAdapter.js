@@ -2,17 +2,29 @@ const { Pool } = require('pg');
 
 class DatabaseAdapter {
   constructor() {
-    this.client = new Pool({
-      user: 'admin',
-      host: 'localhost',
-      database: 'meu_banco',
-      // database: 'backend',
-      password: 'admin123',
-      port: 5432,
-      max: 20, // limite de conexões simultâneas no pool
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
-    });
+    const connectionString = process.env.DATABASE_URL;
+    if (connectionString) {
+      this.client = new Pool({
+        connectionString,
+        ssl: {
+          rejectUnauthorized: false
+        },
+        max: 20,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 2000,
+      });
+    } else {
+      this.client = new Pool({
+        user: 'admin',
+        host: 'localhost',
+        database: 'backend',
+        password: 'admin123',
+        port: 5432,
+        max: 20, // limite de conexões simultâneas no pool
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 2000,
+      });
+    }
   }
 
   // Método para iniciar a conexão
@@ -322,10 +334,11 @@ class DatabaseAdapter {
     try {
       const query = `
         WITH gastos_partido AS (
-            SELECT sigla_partido AS partido, SUM(valor_liquido) AS gastos
-            FROM despesas
-            WHERE sigla_partido IS NOT NULL AND sigla_partido != ''
-            GROUP BY sigla_partido
+            SELECT d.ultimo_status_sigla_partido AS partido, SUM(des.valor_liquido) AS gastos
+            FROM despesas des
+            JOIN deputados d ON des.id_deputado = des.id_deputado
+            WHERE d.ultimo_status_sigla_partido IS NOT NULL AND d.ultimo_status_sigla_partido != ''
+            GROUP BY d.ultimo_status_sigla_partido
         ),
         presenca_partido AS (
             SELECT 
