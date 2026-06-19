@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const dbAdapter = require('./DatabaseAdapter'); // Importa a nossa nova classe
