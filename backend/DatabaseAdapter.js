@@ -11,7 +11,7 @@ class DatabaseAdapter {
         },
         max: 20,
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 2000,
+        connectionTimeoutMillis: 30000,
       });
     } else {
       this.client = new Pool({
@@ -22,7 +22,7 @@ class DatabaseAdapter {
         port: 5432,
         max: 20, // limite de conexões simultâneas no pool
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 2000,
+        connectionTimeoutMillis: 30000,
       });
     }
   }
