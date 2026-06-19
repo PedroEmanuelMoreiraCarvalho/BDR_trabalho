@@ -1014,27 +1014,10 @@ def carregar_despesas(caminho_arquivo):
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS despesas (
                 id_deputado INTEGER,
-                id_deputado_despesas INTEGER,
-                nome_parlamentar VARCHAR(255),
-                cpf VARCHAR(11),
-                sigla_partido VARCHAR(20),
-                sigla_uf VARCHAR(2),
-                nu_legislatura INTEGER,
-                cod_legislatura INTEGER,
-                cod_subcota INTEGER,
                 desc_subcota VARCHAR(255),
-                cod_especificacao_subcota INTEGER,
-                desc_especificacao_subcota VARCHAR(255),
                 fornecedor_nome VARCHAR(255),
                 fornecedor_cnpj_cpf VARCHAR(14),
-                data_emissao DATE,
-                mes INTEGER,
-                ano INTEGER,
-                valor_documento DECIMAL(15,2),
-                valor_glosa DECIMAL(15,2),
-                valor_liquido DECIMAL(15,2),
-                id_documento INTEGER,
-                url_documento TEXT
+                valor_liquido DECIMAL(15,2)
             )
         """)
         
@@ -1114,20 +1097,12 @@ def carregar_despesas(caminho_arquivo):
                     try:
                         cursor.execute("""
                             INSERT INTO despesas (
-                                id_deputado, id_deputado_despesas, nome_parlamentar, cpf,
-                                sigla_partido, sigla_uf, nu_legislatura, cod_legislatura,
-                                cod_subcota, desc_subcota, cod_especificacao_subcota, 
-                                desc_especificacao_subcota, fornecedor_nome, fornecedor_cnpj_cpf,
-                                data_emissao, mes, ano, valor_documento, valor_glosa, 
-                                valor_liquido, id_documento, url_documento
-                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                id_deputado, desc_subcota, fornecedor_nome, fornecedor_cnpj_cpf,
+                                valor_liquido
+                            ) VALUES (%s, %s, %s, %s, %s)
                         """, (
-                            id_deputado, id_deputado_despesas, nome_parlamentar, cpf,
-                            sigla_partido, sigla_uf, nu_legislatura, cod_legislatura,
-                            cod_subcota, desc_subcota, cod_especificacao_subcota,
-                            desc_especificacao_subcota, fornecedor_nome, fornecedor_cnpj_cpf,
-                            data_emissao, mes, ano, valor_documento, valor_glosa,
-                            valor_liquido, id_documento, url_documento
+                            id_deputado, desc_subcota, fornecedor_nome, fornecedor_cnpj_cpf,
+                            valor_liquido
                         ))
                         
                         inseridos += 1
@@ -1180,12 +1155,12 @@ def carregar_despesas(caminho_arquivo):
             print(f"{'='*50}")
             
             # Mostrar amostra dos dados
-            cursor.execute("SELECT id_deputado, nome_parlamentar, cpf, valor_liquido FROM despesas LIMIT 5")
+            cursor.execute("SELECT id_deputado, desc_subcota, fornecedor_nome, valor_liquido FROM despesas LIMIT 5")
             amostra = cursor.fetchall()
             if amostra:
                 print("\nAmostra dos dados inseridos:")
                 for row in amostra:
-                    print(f"  Deputado: {row[0]} | Nome: {row[1]} | CPF: {row[2]} | Valor: R$ {row[3]}")
+                    print(f"  Deputado: {row[0]} | Subcota: {row[1]} | Fornecedor: {row[2]} | Valor: R$ {row[3]}")
             
         cursor.close()
         conn.close()
@@ -2131,21 +2106,10 @@ def carregar_proposicoes(caminho_arquivo):
                 sigla_tipo_proposicao VARCHAR(10),
                 numero_proposicao INTEGER,
                 ano_proposicao INTEGER,
-                cod_tipo_proposicao INTEGER,
-                descricao_tipo_proposicao TEXT,
                 ementa TEXT,
                 ementa_detalhada TEXT,
                 keywords TEXT,
-                data_apresentacao DATE,
-                url_inteiro_teor TEXT,
-                ultimo_status_data_hora TIMESTAMP,
-                ultimo_status_descricao_tramitacao TEXT,
-                ultimo_status_id_tipo_tramitacao INTEGER,
-                ultimo_status_descricao_situacao TEXT,
-                ultimo_status_id_situacao INTEGER,
-                ultimo_status_regime TEXT,
-                ultimo_status_apreciacao TEXT,
-                ultimo_status_despacho TEXT
+                ultimo_status_id_situacao INTEGER
             )
         """)
         
@@ -2203,38 +2167,19 @@ def carregar_proposicoes(caminho_arquivo):
                         cursor.execute("""
                             INSERT INTO proposicoes (
                                 id_proposicao, sigla_tipo_proposicao, numero_proposicao, ano_proposicao,
-                                cod_tipo_proposicao, descricao_tipo_proposicao, ementa, ementa_detalhada,
-                                keywords, data_apresentacao, url_inteiro_teor, ultimo_status_data_hora,
-                                ultimo_status_descricao_tramitacao, ultimo_status_id_tipo_tramitacao,
-                                ultimo_status_descricao_situacao, ultimo_status_id_situacao,
-                                ultimo_status_regime, ultimo_status_apreciacao, ultimo_status_despacho
-                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                ementa, ementa_detalhada, keywords, ultimo_status_id_situacao
+                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                             ON CONFLICT (id_proposicao) DO UPDATE SET
                                 sigla_tipo_proposicao = EXCLUDED.sigla_tipo_proposicao,
                                 numero_proposicao = EXCLUDED.numero_proposicao,
                                 ano_proposicao = EXCLUDED.ano_proposicao,
-                                cod_tipo_proposicao = EXCLUDED.cod_tipo_proposicao,
-                                descricao_tipo_proposicao = EXCLUDED.descricao_tipo_proposicao,
                                 ementa = EXCLUDED.ementa,
                                 ementa_detalhada = EXCLUDED.ementa_detalhada,
                                 keywords = EXCLUDED.keywords,
-                                data_apresentacao = EXCLUDED.data_apresentacao,
-                                url_inteiro_teor = EXCLUDED.url_inteiro_teor,
-                                ultimo_status_data_hora = EXCLUDED.ultimo_status_data_hora,
-                                ultimo_status_descricao_tramitacao = EXCLUDED.ultimo_status_descricao_tramitacao,
-                                ultimo_status_id_tipo_tramitacao = EXCLUDED.ultimo_status_id_tipo_tramitacao,
-                                ultimo_status_descricao_situacao = EXCLUDED.ultimo_status_descricao_situacao,
-                                ultimo_status_id_situacao = EXCLUDED.ultimo_status_id_situacao,
-                                ultimo_status_regime = EXCLUDED.ultimo_status_regime,
-                                ultimo_status_apreciacao = EXCLUDED.ultimo_status_apreciacao,
-                                ultimo_status_despacho = EXCLUDED.ultimo_status_despacho
+                                ultimo_status_id_situacao = EXCLUDED.ultimo_status_id_situacao
                         """, (
                             id_proposicao, sigla_tipo_proposicao, numero_proposicao, ano_proposicao,
-                            cod_tipo_proposicao, descricao_tipo_proposicao, ementa, ementa_detalhada,
-                            keywords, data_apresentacao, url_inteiro_teor, ultimo_status_data_hora,
-                            ultimo_status_descricao_tramitacao, ultimo_status_id_tipo_tramitacao,
-                            ultimo_status_descricao_situacao, ultimo_status_id_situacao,
-                            ultimo_status_regime, ultimo_status_apreciacao, ultimo_status_despacho
+                            ementa, ementa_detalhada, keywords, ultimo_status_id_situacao
                         ))
                         
                         if cursor.rowcount == 1:
@@ -2290,12 +2235,12 @@ def carregar_proposicoes(caminho_arquivo):
             print(f"{'='*50}")
             
             # Mostrar amostra dos dados
-            cursor.execute("SELECT id_proposicao, sigla_tipo_proposicao, numero_proposicao, ano_proposicao, ultimo_status_descricao_situacao FROM proposicoes LIMIT 5")
+            cursor.execute("SELECT id_proposicao, sigla_tipo_proposicao, numero_proposicao, ano_proposicao, ultimo_status_id_situacao FROM proposicoes LIMIT 5")
             amostra = cursor.fetchall()
             if amostra:
                 print("\nAmostra dos dados inseridos:")
                 for row in amostra:
-                    print(f"  ID: {row[0]} | Tipo: {row[1]} | Número: {row[2]}/{row[3]} | Situação: {row[4]}")
+                    print(f"  ID: {row[0]} | Tipo: {row[1]} | Número: {row[2]}/{row[3]} | ID Situação: {row[4]}")
             
         cursor.close()
         conn.close()
@@ -2331,11 +2276,50 @@ def atualizar_views():
         if conn:
             conn.close()
 
+def inicializar_esquema_local():
+    """Cria as tabelas locais usando o arquivo SQL antes de iniciar a carga se não existirem"""
+    if not criar_banco_se_nao_existe():
+        return False
+    
+    conn_config = {
+        'host': DB_CONFIG['host'],
+        'port': DB_CONFIG['port'],
+        'database': NOME_BANCO,
+        'user': DB_CONFIG['user'],
+        'password': DB_CONFIG['password']
+    }
+    
+    try:
+        conn = psycopg2.connect(**conn_config)
+        cursor = conn.cursor()
+        
+        # Verificar se as tabelas já foram criadas (ex: deputados)
+        cursor.execute("SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'deputados');")
+        existe = cursor.fetchone()[0]
+        
+        if not existe:
+            print("Inicializando esquema local do banco de dados a partir de 'criar_tabelas_sql.sql'...")
+            with open("criar_tabelas_sql.sql", "r", encoding="utf-8") as f:
+                schema_sql = f.read()
+            cursor.execute(schema_sql)
+            conn.commit()
+            print("Esquema local criado com sucesso!")
+        
+        cursor.close()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Erro ao inicializar esquema local: {e}")
+        return False
+
 if __name__ == "__main__":
     print("=== Carga de Deputados ===")
     print(f"Host: {DB_CONFIG['host']}:{DB_CONFIG['port']}")
     print(f"Banco alvo: {NOME_BANCO}")
     print("-" * 50)
+
+    # Inicializa o esquema local se o banco estiver vazio
+    inicializar_esquema_local()
 
     # Comente e descomente as linhas que achar necessário abaixo
     
@@ -2347,14 +2331,14 @@ if __name__ == "__main__":
     carregar_votacoes_orientacoes(arquivo_orientacao_csv)
     arquivo_votos_csv = r'dados_finais\votacoes_votos.csv'
     carregar_votacoes_votos(arquivo_votos_csv)
-    # arquivo_despesas_csv = r'dados_finais\despesas.csv' #ainda contaminados
-    # carregar_despesas(arquivo_despesas_csv)
+    arquivo_despesas_csv = r'dados_finais\despesas.csv' #ainda contaminados
+    carregar_despesas(arquivo_despesas_csv)
     arquivo_eventos_csv = r'dados_finais\eventos.csv' #ainda contaminados
     carregar_eventos(arquivo_eventos_csv)
     arquivo_presenca_csv = r'dados_finais\presencas_resumo.csv' #ainda contaminados (fk's inexistentes)
     carregar_presenca_deputados(arquivo_presenca_csv)
-    arquivo_frentes_csv = r'dados_finais\frentes_deputados.csv' #ainda contaminados (não tem data de inicio nem fim e fk's inexistentes)
-    carregar_frentes_deputados(arquivo_frentes_csv)
+    # arquivo_frentes_csv = r'dados_finais\frentes_deputados.csv' #ainda contaminados (não tem data de inicio nem fim e fk's inexistentes)
+    # carregar_frentes_deputados(arquivo_frentes_csv)
     arquivo_proposicoes_csv = r'dados_finais\proposicoes.csv' #ainda contaminados (fk's inexistentes)
     carregar_proposicoes(arquivo_proposicoes_csv)
     arquivo_proposicoes_autores_csv = r'dados_finais\proposicoes_autores.csv' #ainda contaminados (fk's inexistentes)

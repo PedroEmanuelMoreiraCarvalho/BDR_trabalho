@@ -41,13 +41,7 @@ CREATE TABLE votacao (
 
 -- Índices para melhorar performance de consultas
 CREATE INDEX idx_votacao_data_votacao ON votacao(data_votacao);
-CREATE INDEX idx_votacao_id_evento ON votacao(id_evento);
 CREATE INDEX idx_votacao_id_proposicao ON votacao(id_proposicao);
-CREATE INDEX idx_votacao_aprovacao ON votacao(aprovacao);
-CREATE INDEX idx_votacao_data_hora_registro ON votacao(data_hora_registro_votacao);
-
--- Índice composto para consultas comuns
-CREATE INDEX idx_votacao_evento_data ON votacao(id_evento, data_votacao);
 
 -- Comentários nas colunas para documentação
 COMMENT ON TABLE votacao IS 'Tabela de votações da Câmara dos Deputados';
@@ -80,10 +74,7 @@ CREATE TABLE votacoes_orientacoes (
 );
 
 -- Índices para melhorar performance de consultas
-CREATE INDEX idx_votacoes_orientacoes_id_votacao ON votacoes_orientacoes(id_votacao);
 CREATE INDEX idx_votacoes_orientacoes_sigla_bancada ON votacoes_orientacoes(sigla_bancada);
-CREATE INDEX idx_votacoes_orientacoes_orientacao ON votacoes_orientacoes(orientacao);
-CREATE INDEX idx_votacoes_orientacoes_votacao_bancada ON votacoes_orientacoes(id_votacao, sigla_bancada);
 
 -- Comentários
 COMMENT ON TABLE votacoes_orientacoes IS 'Tabela de orientações de voto por bancada/partido nas votações';
@@ -105,7 +96,6 @@ CREATE TABLE votacoes_votos (
 );
 
 -- Índices para performance
-CREATE INDEX idx_votacoes_votos_id_votacao ON votacoes_votos(id_votacao);
 CREATE INDEX idx_votacoes_votos_id_deputado ON votacoes_votos(id_deputado);
 
 -- Comentários
@@ -120,60 +110,22 @@ COMMENT ON COLUMN votacoes_votos.voto IS 'Voto registrado do deputado.';
 
 CREATE TABLE despesas (
     id_deputado INTEGER,
-    id_deputado_despesas INTEGER,
-    nome_parlamentar VARCHAR(255),
-    cpf VARCHAR(11),
-    sigla_partido VARCHAR(20),
-    sigla_uf VARCHAR(2),
-    nu_legislatura INTEGER,
-    cod_legislatura INTEGER,
-    cod_subcota INTEGER,
     desc_subcota VARCHAR(255),
-    cod_especificacao_subcota INTEGER,
-    desc_especificacao_subcota VARCHAR(255),
     fornecedor_nome VARCHAR(255),
     fornecedor_cnpj_cpf VARCHAR(14),
-    data_emissao DATE,
-    mes INTEGER,
-    ano INTEGER,
-    valor_documento DECIMAL(15,2),
-    valor_glosa DECIMAL(15,2),
-    valor_liquido DECIMAL(15,2),
-    id_documento INTEGER,
-    url_documento TEXT
+    valor_liquido DECIMAL(15,2)
 );
 
 -- Índices para performance
 CREATE INDEX idx_despesas_id_deputado ON despesas(id_deputado);
-CREATE INDEX idx_despesas_id_deputado_despesas ON despesas(id_deputado_despesas);
-CREATE INDEX idx_despesas_data_emissao ON despesas(data_emissao);
-CREATE INDEX idx_despesas_ano_mes ON despesas(ano, mes);
-CREATE INDEX idx_despesas_partido ON despesas(sigla_partido);
-CREATE INDEX idx_despesas_uf ON despesas(sigla_uf);
 
 -- Comentários
 COMMENT ON TABLE despesas IS 'Tabela de despesas dos deputados (CEAP - Cota para o Exercício da Atividade Parlamentar)';
-COMMENT ON COLUMN despesas.id_deputado_despesas IS 'Identificador de cadastro do parlamentar na base de despesas (CEAP).';
 COMMENT ON COLUMN despesas.id_deputado IS 'Identificador do deputado para cruzar com outras tabelas.';
-COMMENT ON COLUMN despesas.nome_parlamentar IS 'Nome parlamentar do deputado na base de despesas.';
-COMMENT ON COLUMN despesas.sigla_partido IS 'Sigla do partido (na data do gasto).';
-COMMENT ON COLUMN despesas.sigla_uf IS 'UF do parlamentar (na data do gasto).';
-COMMENT ON COLUMN despesas.nu_legislatura IS 'Número da legislatura.';
-COMMENT ON COLUMN despesas.cod_legislatura IS 'Código da legislatura.';
-COMMENT ON COLUMN despesas.cod_subcota IS 'Código do tipo de despesa (subcota).';
 COMMENT ON COLUMN despesas.desc_subcota IS 'Descrição do tipo de despesa (subcota).';
-COMMENT ON COLUMN despesas.cod_especificacao_subcota IS 'Código da especificação da subcota.';
-COMMENT ON COLUMN despesas.desc_especificacao_subcota IS 'Descrição da especificação da subcota.';
 COMMENT ON COLUMN despesas.fornecedor_nome IS 'Nome do fornecedor.';
 COMMENT ON COLUMN despesas.fornecedor_cnpj_cpf IS 'CNPJ/CPF do fornecedor.';
-COMMENT ON COLUMN despesas.data_emissao IS 'Data de emissão do documento.';
-COMMENT ON COLUMN despesas.mes IS 'Mês de referência da despesa.';
-COMMENT ON COLUMN despesas.ano IS 'Ano de referência da despesa.';
-COMMENT ON COLUMN despesas.valor_documento IS 'Valor bruto do documento.';
-COMMENT ON COLUMN despesas.valor_glosa IS 'Valor de glosa aplicado.';
 COMMENT ON COLUMN despesas.valor_liquido IS 'Valor líquido efetivamente pago.';
-COMMENT ON COLUMN despesas.id_documento IS 'Identificador do documento na base.';
-COMMENT ON COLUMN despesas.url_documento IS 'URL do documento (quando disponível).';
 
 ----------------------------------
 -- Criação da tabela de Eventos --
@@ -253,7 +205,6 @@ CREATE TABLE frentes_deputados (
 -- Índices para performance
 CREATE INDEX idx_frentes_deputados_id_frente ON frentes_deputados(id_frente);
 CREATE INDEX idx_frentes_deputados_id_deputado ON frentes_deputados(id_deputado);
-CREATE INDEX idx_frentes_deputados_datas ON frentes_deputados(data_inicio, data_fim);
 
 -- Comentários
 COMMENT ON TABLE frentes_deputados IS 'Relacionamento entre deputados e frentes parlamentares';
@@ -272,29 +223,13 @@ CREATE TABLE proposicoes (
     sigla_tipo_proposicao VARCHAR(10),
     numero_proposicao INTEGER,
     ano_proposicao INTEGER,
-    cod_tipo_proposicao INTEGER,
-    descricao_tipo_proposicao TEXT,
     ementa TEXT,
     ementa_detalhada TEXT,
     keywords TEXT,
-    data_apresentacao DATE,
-    url_inteiro_teor TEXT,
-    ultimo_status_data_hora TIMESTAMP,
-    ultimo_status_descricao_tramitacao TEXT,
-    ultimo_status_id_tipo_tramitacao INTEGER,
-    ultimo_status_descricao_situacao TEXT,
-    ultimo_status_id_situacao INTEGER,
-    ultimo_status_regime TEXT,
-    ultimo_status_apreciacao TEXT,
-    ultimo_status_despacho TEXT
+    ultimo_status_id_situacao INTEGER
 );
 
 -- Índices para performance
-CREATE INDEX idx_proposicoes_sigla_tipo ON proposicoes(sigla_tipo_proposicao);
-CREATE INDEX idx_proposicoes_numero ON proposicoes(numero_proposicao);
-CREATE INDEX idx_proposicoes_ano ON proposicoes(ano_proposicao);
-CREATE INDEX idx_proposicoes_data_apresentacao ON proposicoes(data_apresentacao);
-CREATE INDEX idx_proposicoes_ultimo_status_situacao ON proposicoes(ultimo_status_descricao_situacao);
 CREATE INDEX idx_proposicoes_sigla_tipo_numero_ano ON proposicoes(sigla_tipo_proposicao, numero_proposicao, ano_proposicao);
 
 -- Comentários
@@ -303,19 +238,10 @@ COMMENT ON COLUMN proposicoes.id_proposicao IS 'Identificador único da proposi�
 COMMENT ON COLUMN proposicoes.sigla_tipo_proposicao IS 'Sigla do tipo da proposição (ex: PL, PEC).';
 COMMENT ON COLUMN proposicoes.numero_proposicao IS 'Número oficial da proposição.';
 COMMENT ON COLUMN proposicoes.ano_proposicao IS 'Ano de apresentação da proposição.';
-COMMENT ON COLUMN proposicoes.cod_tipo_proposicao IS 'Código numérico do tipo.';
-COMMENT ON COLUMN proposicoes.descricao_tipo_proposicao IS 'Descrição do tipo de proposição.';
 COMMENT ON COLUMN proposicoes.ementa IS 'Ementa da proposição.';
 COMMENT ON COLUMN proposicoes.ementa_detalhada IS 'Ementa detalhada.';
 COMMENT ON COLUMN proposicoes.keywords IS 'Palavras-chave associadas.';
-COMMENT ON COLUMN proposicoes.data_apresentacao IS 'Data de apresentação da proposição.';
-COMMENT ON COLUMN proposicoes.url_inteiro_teor IS 'URL do inteiro teor.';
-COMMENT ON COLUMN proposicoes.ultimo_status_data_hora IS 'Data/hora do último status.';
-COMMENT ON COLUMN proposicoes.ultimo_status_descricao_tramitacao IS 'Descrição da tramitação.';
-COMMENT ON COLUMN proposicoes.ultimo_status_descricao_situacao IS 'Descrição da situação.';
 COMMENT ON COLUMN proposicoes.ultimo_status_id_situacao IS 'Identificador da situação.';
-COMMENT ON COLUMN proposicoes.ultimo_status_regime IS 'Regime de tramitação.';
-COMMENT ON COLUMN proposicoes.ultimo_status_apreciacao IS 'Forma de apreciação.';
 
 ---------------------------------------------
 -- Criação da tabela de Proposições Autores--
@@ -333,7 +259,6 @@ CREATE TABLE proposicoes_autores (
 -- Índices para performance
 CREATE INDEX idx_proposicoes_autores_id_proposicao ON proposicoes_autores(id_proposicao);
 CREATE INDEX idx_proposicoes_autores_id_deputado ON proposicoes_autores(id_deputado);
-CREATE INDEX idx_proposicoes_autores_tipo_autor ON proposicoes_autores(tipo_autor);
 
 -- Comentários
 COMMENT ON TABLE proposicoes_autores IS 'Relacionamento entre proposições e seus autores';
@@ -357,7 +282,6 @@ CREATE TABLE proposicoes_temas (
 );
 
 -- Índices para performance
-CREATE INDEX idx_proposicoes_temas_cod_tema ON proposicoes_temas(cod_tema);
 CREATE INDEX idx_proposicoes_temas_tema ON proposicoes_temas(tema);
 
 -- Comentários
