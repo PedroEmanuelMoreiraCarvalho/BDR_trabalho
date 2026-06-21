@@ -14,6 +14,7 @@ const DashboardNacional = () => {
   const [metrica, setMetrica] = useState('eficiencia');
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [showInfo, setShowInfo] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const itensPorPagina = 10;
 
   const [baseData, setBaseData] = useState([]);
@@ -101,6 +102,10 @@ const DashboardNacional = () => {
     };
 
     fetchData();
+
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, [paginaAtual, filtroPartido, filtroUF, metrica, ordem]);
 
 
@@ -326,14 +331,18 @@ const DashboardNacional = () => {
                   />
                   <YAxis
                     type="category"
-                    width={220}
+                    width={isMobile ? 120 : 220}
                     dataKey={(data) => {
                       return `${data.posicao_ranking}º - ${data.name} (${data.partido})`;
                     }}
                     stroke="var(--text-primary)"
-                    tick={{ fill: 'var(--text-primary)', fontSize: 12 }}
+                    tick={{ fill: 'var(--text-primary)', fontSize: isMobile ? 10 : 12 }}
                     axisLine={false}
                     tickLine={false}
+                    tickFormatter={(value) => {
+                      if (isMobile && value.length > 15) return value.substring(0, 15) + '...';
+                      return value;
+                    }}
                   />
                   <Tooltip
                     contentStyle={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)' }}

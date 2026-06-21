@@ -20,6 +20,7 @@ const PerfilDeputado = () => {
   const [fornecedores, setFornecedores] = useState([]);
   const [votacoes, setVotacoes] = useState([]);
   const [showInfo, setShowInfo] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   const [filtroTema, setFiltroTema] = useState('Todos');
   const [buscaVotacao, setBuscaVotacao] = useState('');
@@ -80,7 +81,14 @@ const PerfilDeputado = () => {
     };
 
     fetchVotacoes();
-    return () => { ignore = true; };
+    
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    
+    return () => { 
+      ignore = true; 
+      window.removeEventListener('resize', handleResize);
+    };
   }, [id, paginaAtual, filtroTema, buscaVotacao]);
 
   const calcularPercentualRanking = (posicao, total) => {
@@ -165,7 +173,7 @@ const PerfilDeputado = () => {
         <span>Voltar para Busca</span>
       </Link>
 
-      <div className="glass-card" style={{ padding: '32px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '24px' }}>
+      <div className="glass-card" style={{ padding: isMobile ? '24px 16px' : '32px', marginBottom: '24px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', gap: '24px', textAlign: isMobile ? 'center' : 'left' }}>
         <div style={{ width: '180px', height: '180px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden', border: '4px solid var(--border-color)' }}>
           {perfil.url_foto_perfil ? (
             <img src={perfil.url_foto_perfil} alt={`Foto de ${perfil.nome}`} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
@@ -173,9 +181,9 @@ const PerfilDeputado = () => {
             <UserIcon size={80} style={{ color: 'var(--text-secondary)' }} />
           )}
         </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ flex: 1, width: '100%' }}>
+          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'center' : 'flex-start', gap: isMobile ? '16px' : '0' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: isMobile ? 'center' : 'flex-start' }}>
               <div>
                 <h1 style={{ fontSize: '2.5rem', margin: 0, lineHeight: 1.1 }}>{perfil.nome}</h1>
                 {perfil.nome_civil && (
@@ -209,7 +217,7 @@ const PerfilDeputado = () => {
             </div>
 
             {perfil.indice_eficiencia !== undefined && (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', textAlign: 'right' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMobile ? 'center' : 'flex-end', textAlign: isMobile ? 'center' : 'right', marginTop: isMobile ? '16px' : '0' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
                   <span style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Score de Eficiência</span>
                   <div onMouseEnter={() => setShowInfo(true)} onMouseLeave={() => setShowInfo(false)} style={{ cursor: 'pointer', color: 'var(--text-muted)' }}>
@@ -434,7 +442,7 @@ const PerfilDeputado = () => {
               const percent = (fornecedor.total_gasto / maxVal) * 100;
               return (
                 <div key={index} style={{ marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '6px', gap: isMobile ? '4px' : '0' }}>
                     <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)' }}>
                       {index + 1}. {fornecedor.fornecedor_nome}
                     </span>
