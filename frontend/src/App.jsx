@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -16,7 +16,9 @@ function App() {
       <div className="app-container">
         {/* Mobile Header */}
         <div className="mobile-header">
-           <h2 className="text-gradient" style={{ margin: 0, fontSize: '1.25rem' }}>Observatório Político</h2>
+           <Link to="/" style={{ textDecoration: 'none' }}>
+             <h2 className="text-gradient" style={{ margin: 0, fontSize: '1.25rem' }}>Observatório Político</h2>
+           </Link>
            <button onClick={() => setIsMobileMenuOpen(true)} className="mobile-menu-btn">
              <Menu size={24} />
            </button>
