@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  zoom: 0.75; /* Simula um zoom out de 75% na aplicação inteira nativamente */
+  zoom: 1;
   
   /* Premium Dark Mode Colors */
   --bg-base: #0b0f19;
@@ -50,10 +50,22 @@
   --glass-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.1);
 }
 
+@media (max-width: 1024px) {
+  :root {
+    zoom: 1; /* Disable the desktop zoom out on mobile for better readability */
+  }
+}
+
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+html, body {
+  width: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -128,10 +140,12 @@ h1, h2, h3, h4, h5, h6 {
 .app-container {
   display: flex;
   min-height: 100vh;
+  width: 100%;
 }
 
 .main-content {
   flex: 1;
+  min-width: 0; /* Crucial to prevent responsive children (like Recharts) from stretching width */
   padding: 32px;
   margin-left: 280px; /* Sidebar width */
   display: flex;
@@ -142,6 +156,51 @@ h1, h2, h3, h4, h5, h6 {
 @media (max-width: 1024px) {
   .main-content {
     margin-left: 0;
-    padding: 24px;
+    padding: 16px;
+    padding-top: 80px; /* Space for Mobile Header */
+    gap: 16px;
+    width: 100%;
+    box-sizing: border-box;
   }
 }
+
+/* Mobile Header Styles */
+.mobile-header {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--glass-border);
+  z-index: 90;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+}
+
+.mobile-menu-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.mobile-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 1024px) {
+  .mobile-header {
+    display: flex;
+  }
+}
+

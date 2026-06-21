@@ -76,7 +76,7 @@ const BuscaParlamentares = () => {
       )}
 
       {/* Grid de Resultados */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 250px), 1fr))', gap: '24px' }}>
         {resultados.map(dep => (
           <Link 
             key={dep.id} 

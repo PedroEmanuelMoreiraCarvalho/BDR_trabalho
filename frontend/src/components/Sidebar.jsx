@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Search, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Users, Search, Sun, Moon, X } from 'lucide-react';
 import './Sidebar.css';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, onClose }) => {
   const [isLightMode, setIsLightMode] = useState(false);
 
   useEffect(() => {
@@ -32,12 +32,21 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside className="sidebar glass-panel" style={{ display: 'flex', flexDirection: 'column', height: '100vh', justifyContent: 'space-between' }}>
-      <div>
-        <div className="sidebar-header">
-          <h2 className="text-gradient">Observatório Político</h2>
-          <p className="subtitle">Análise da Câmara dos Deputados</p>
-        </div>
+    <>
+      {/* Overlay for mobile */}
+      <div className={`sidebar-overlay ${isOpen ? 'open' : ''}`} onClick={onClose}></div>
+      
+      <aside className={`sidebar glass-panel ${isOpen ? 'open' : ''}`} style={{ display: 'flex', flexDirection: 'column', height: '100vh', justifyContent: 'space-between' }}>
+        <div>
+          <div className="sidebar-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <h2 className="text-gradient">Observatório Político</h2>
+              <p className="subtitle">Análise da Câmara dos Deputados</p>
+            </div>
+            <button className="mobile-close-btn" onClick={onClose}>
+              <X size={24} />
+            </button>
+          </div>
 
         <nav className="sidebar-nav">
           {navItems.map((item) => (
@@ -45,6 +54,7 @@ const Sidebar = () => {
               key={item.path}
               to={item.path}
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              onClick={onClose}
             >
               {item.icon}
               <span>{item.label}</span>
@@ -87,6 +97,7 @@ const Sidebar = () => {
         </div>
       </div>
     </aside>
+    </>
   );
 };
 

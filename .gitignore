@@ -4,3 +4,4 @@ venv
 .venv
 auxiliar/
 .env
+.DS_Store
