@@ -7,6 +7,7 @@ import DashboardNacional from './pages/DashboardNacional';
 import BuscaParlamentares from './pages/BuscaParlamentares';
 import VisaoPartidaria from './pages/VisaoPartidaria';
 import PerfilDeputado from './pages/PerfilDeputado';
+import Metodologia from './pages/Metodologia';
 
 function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -33,8 +34,8 @@ function App() {
             <Route path="/partidos" element={<VisaoPartidaria />} />
             <Route path="/parlamentares" element={<BuscaParlamentares />} />
             <Route path="/parlamentares/:id" element={<PerfilDeputado />} />
+            <Route path="/metodologia" element={<Metodologia />} />
             <Route path="*" element={<Navigate to="/" replace />} />
-            {/* Outras rotas entrarão aqui */}
           </Routes>
           </ErrorBoundary>
         </main>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Search, Sun, Moon, X } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { LayoutDashboard, Users, Search, BookOpen, Sun, Moon, X } from 'lucide-react';
 import './Sidebar.css';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -13,6 +13,30 @@ const Sidebar = ({ isOpen, onClose }) => {
       document.documentElement.setAttribute('data-theme', 'light');
     }
   }, []);
+
+  const location = useLocation();
+
+  const metodologiaSubItems = [
+    { id: 'visao_geral', label: 'Visão Geral do Projeto' },
+    { id: 'score', label: 'Índice de Eficiência' },
+    { id: 'dicionario', label: 'Dicionário de Dados' },
+    { id: 'limpeza', label: 'Limpeza de Dados' },
+    { id: 'anexos', label: 'Anexos & Scripts' },
+  ];
+
+  const handleScrollTo = (id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      setTimeout(() => {
+        // Ajustando para ficar um pouco abaixo do topo por causa do possível header
+        const y = element.getBoundingClientRect().top + window.scrollY - 30;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }, 50);
+      if (window.innerWidth <= 768) {
+        onClose();
+      }
+    }
+  };
 
   const toggleTheme = () => {
     setIsLightMode(!isLightMode);
@@ -29,6 +53,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { path: '/', icon: <LayoutDashboard size={20} />, label: 'Visão Geral' },
     { path: '/partidos', icon: <Users size={20} />, label: 'Visão Partidária' },
     { path: '/parlamentares', icon: <Search size={20} />, label: 'Deputados' },
+    { path: '/metodologia', icon: <BookOpen size={20} />, label: 'Metodologia' },
   ];
 
   return (
@@ -50,15 +75,49 @@ const Sidebar = ({ isOpen, onClose }) => {
 
         <nav className="sidebar-nav">
           {navItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-              onClick={onClose}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </NavLink>
+            <div key={item.path}>
+              <NavLink
+                to={item.path}
+                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                onClick={onClose}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </NavLink>
+              
+              {/* Render sub-items if we are currently on the Metodologia route */}
+              {item.path === '/metodologia' && location.pathname === '/metodologia' && (
+                <div style={{ paddingLeft: '28px', display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px', marginBottom: '8px' }}>
+                  {metodologiaSubItems.map((sub) => (
+                    <button
+                      key={sub.id}
+                      onClick={() => handleScrollTo(sub.id)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-secondary)',
+                        textAlign: 'left',
+                        padding: '8px 12px',
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        borderRadius: '6px',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                        e.currentTarget.style.color = 'var(--text-primary)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.color = 'var(--text-secondary)';
+                      }}
+                    >
+                      • {sub.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
         </nav>
       </div>
