@@ -331,9 +331,10 @@ const DashboardNacional = () => {
                   />
                   <YAxis
                     type="category"
-                    width={isMobile ? 120 : 220}
+                    width={isMobile ? 120 : 240}
                     dataKey={(data) => {
-                      return `${data.posicao_ranking}º - ${data.name} (${data.partido})`;
+                      const partidoUf = [data.partido, data.uf].filter(Boolean).join(' - ');
+                      return `${data.posicao_ranking}º - ${data.name}${partidoUf ? ` (${partidoUf})` : ''}`;
                     }}
                     stroke="var(--text-primary)"
                     tick={{ fill: 'var(--text-primary)', fontSize: isMobile ? 10 : 12 }}
