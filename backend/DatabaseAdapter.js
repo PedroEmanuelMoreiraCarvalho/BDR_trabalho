@@ -682,7 +682,6 @@ class DatabaseAdapter {
           d.ultimo_status_condicao_eleitoral AS condicao_eleitoral
         FROM deputados d
         WHERE ${whereClause}
-          AND d.ultimo_status_situacao = 'Exercício'  -- Filtra apenas deputados em exercício
         ORDER BY d.ultimo_status_nome_eleitoral
         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
       `;
@@ -695,7 +694,6 @@ class DatabaseAdapter {
         SELECT COUNT(*) as total
         FROM deputados d
         WHERE ${whereClause}
-          AND d.ultimo_status_situacao = 'Exercício'
       `;
 
       const countResult = await this.client.query(countQuery, params.slice(0, -2));
