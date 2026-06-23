@@ -110,6 +110,7 @@ class DashboardAdapter {
       return new Promise((resolve) => setTimeout(() => {
         resolve({
           data: MOCK_DEPUTADOS.slice(0, 10).map((d, i) => ({
+            id_deputado: d.id,
             name: d.name,
             gastos: d.gastos,
             partido: d.partido,
@@ -286,7 +287,8 @@ class DashboardAdapter {
           endereco: 'Gabinete 123 - Anexo IV',
           indice_eficiencia: 8.5,
           total_deputados: 513,
-          posicao_ranking: 42
+          posicao_ranking: 42,
+          situacao: 'Exercício'
         });
       }, 300));
     }

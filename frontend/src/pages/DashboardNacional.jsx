@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { ChevronDown, ChevronUp, Filter, Info } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import DashboardAdapter from '../adapters/DashboardAdapter';
 
 const DashboardNacional = () => {
+  const navigate = useNavigate();
   // ==========================================
   // ESTADOS DA INTERFACE (Filtros e UI)
   // ==========================================
@@ -65,6 +67,7 @@ const DashboardNacional = () => {
           const offset = (paginaAtual - 1) * itensPorPagina;
 
           let dataMapped = (resGastos.data || []).map((item, index) => ({
+            id_deputado: item.id_deputado,
             name: item.name,
             partido: item.partido,
             uf: item.uf,
@@ -288,6 +291,9 @@ const DashboardNacional = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', position: 'relative' }}>
             <h2 style={{ fontSize: '1.125rem', margin: 0 }}>
               Ranking de Deputados ({appliedMetrica === 'eficiencia' ? 'Índice de Eficiência' : 'Total de Gastos'})
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginLeft: '12px', fontWeight: 'normal' }}>
+                (Clique no gráfico para ver o perfil)
+              </span>
             </h2>
             {appliedMetrica === 'eficiencia' && (
               <div
@@ -319,7 +325,21 @@ const DashboardNacional = () => {
           <div style={{ width: '100%', height: 400 }}>
             {baseData.length > 0 ? (
               <ResponsiveContainer>
-                <BarChart data={baseData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
+                <BarChart 
+                  data={baseData} 
+                  layout="vertical" 
+                  margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                  style={{ cursor: 'pointer' }}
+                  onClick={(state) => {
+                    if (state && state.activeTooltipIndex !== undefined) {
+                      const index = state.activeTooltipIndex;
+                      const dep = baseData[index];
+                      if (dep && dep.id_deputado) {
+                        navigate(`/parlamentares/${dep.id_deputado}`);
+                      }
+                    }
+                  }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" horizontal={true} vertical={false} />
                   <XAxis
                     type="number"
