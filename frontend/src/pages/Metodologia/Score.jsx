@@ -7,15 +7,30 @@ const MathEquation = ({ equation, displayMode = true }) => {
     throwOnError: false,
     displayMode,
   });
+  if (displayMode) {
+    return (
+      <div 
+        style={{ 
+          overflowX: 'auto', 
+          overflowY: 'hidden', 
+          maxWidth: '100%', 
+          padding: '12px 0', 
+          margin: '12px 0',
+          scrollbarWidth: 'thin'
+        }}
+        dangerouslySetInnerHTML={{ __html: html }} 
+      />
+    );
+  }
   return <span dangerouslySetInnerHTML={{ __html: html }} />;
 };
 
 const Score = () => {
   return (
     <div className="metodologia-content">
-      <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>Formulação Matemática e Fundamentação Científica: Questão 7 (Índice de Eficiência)</h2>
+      <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>Formulação Matemática e Fundamentação Científica (Índice de Eficiência)</h2>
       <p style={{ marginBottom: '1.25rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-        Este documento apresenta a modelagem matemática do <strong>Índice de Eficiência</strong> dos deputados federais utilizado na <strong>Questão 7</strong>. A notação foi estruturada seguindo o padrão de artigos acadêmicos.
+        Este documento apresenta a modelagem matemática do <strong>Índice de Eficiência</strong> dos deputados federais. A notação foi estruturada seguindo o padrão de artigos acadêmicos.
       </p>
 
       <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '2rem 0' }} />
