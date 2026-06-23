@@ -108,6 +108,7 @@ class DatabaseAdapter {
 
       const query = `
         SELECT
+            d.id_deputado AS id_deputado,
             d.ultimo_status_nome_eleitoral AS name,
             d.ultimo_status_sigla_partido AS partido,
             d.ultimo_status_sigla_uf AS uf,
@@ -428,6 +429,7 @@ class DatabaseAdapter {
           d.ultimo_status_sigla_uf AS uf,
           d.escolaridade_deputado AS escolaridade,
           d.ultimo_status_url_foto AS url_foto_perfil,
+          d.ultimo_status_situacao AS situacao,
           TO_CHAR(d.data_nascimento_deputado, 'DD/MM/YYYY') AS data_nascimento,
           'Não cadastrado no BD' AS email,
           'Não cadastrado no BD' AS telefone,

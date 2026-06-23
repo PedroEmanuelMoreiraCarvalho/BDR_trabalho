@@ -40,8 +40,8 @@ const Limpeza = () => {
       <p style={{ marginBottom: '1.25rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
         Muitas orientações não traziam a sigla do partido, mas sim do "Bloco" do qual ele faz parte. Expandimos essas orientações para todos os partidos constituintes do grupo, de forma que o deputado seja avaliado pela ordem de seu líder.
       </p>
-      <div style={{ overflowX: 'auto', marginBottom: '2rem' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid var(--border-color)', fontSize: '0.95rem' }}>
+      <div style={{ overflowX: 'auto', marginBottom: '2rem', width: '100%' }}>
+        <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', border: '1px solid var(--border-color)', fontSize: '0.95rem' }}>
           <thead>
             <tr>
               <th style={{ background: 'rgba(255,255,255,0.05)', padding: '12px', border: '1px solid var(--border-color)', textAlign: 'left', color: 'var(--text-primary)' }}>Tipo</th>
@@ -82,7 +82,18 @@ const Limpeza = () => {
         Para eliminar ambiguidades e refletir a ordem de comando real do parlamentar, implementamos uma <strong>hierarquia de prioridade legal de liderança</strong> para a filtragem final das orientações:
       </p>
       
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '2rem', padding: '16px', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '8px' }}>
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        flexWrap: 'wrap',
+        gap: '12px', 
+        marginBottom: '2rem', 
+        padding: '16px', 
+        background: 'rgba(59, 130, 246, 0.05)', 
+        border: '1px solid rgba(59, 130, 246, 0.2)', 
+        borderRadius: '8px' 
+      }}>
         <div style={{ flex: 1, textAlign: 'center' }}>
           <strong style={{ color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>Prioridade 1</strong>
           <span style={{ color: 'var(--text-secondary)' }}>Partido</span>

@@ -1,8 +1,8 @@
 import React from 'react';
 
 const TableWrapper = ({ children }) => (
-  <div style={{ overflowX: 'auto', marginBottom: '2rem' }}>
-    <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid var(--border-color)', fontSize: '0.95rem' }}>
+  <div style={{ overflowX: 'auto', marginBottom: '2rem', width: '100%' }}>
+    <table style={{ width: '100%', minWidth: '650px', borderCollapse: 'collapse', border: '1px solid var(--border-color)', fontSize: '0.95rem' }}>
       {children}
     </table>
   </div>

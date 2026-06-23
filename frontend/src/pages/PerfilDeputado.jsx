@@ -195,13 +195,25 @@ const PerfilDeputado = () => {
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', color: 'var(--text-secondary)' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                     <span style={{ background: 'rgba(59, 130, 246, 0.2)', color: 'var(--accent-primary)', padding: '2px 10px', borderRadius: '8px', fontWeight: '600', fontSize: '0.875rem' }}>
                       {perfil.partido}
                     </span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.875rem' }}>
                       <MapPin size={16} /> {perfil.uf}
                     </span>
+                    {perfil.situacao && (
+                      <span style={{ 
+                        background: perfil.situacao === 'Exercício' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)', 
+                        color: perfil.situacao === 'Exercício' ? '#10b981' : '#f59e0b', 
+                        padding: '2px 10px', 
+                        borderRadius: '8px', 
+                        fontWeight: '600', 
+                        fontSize: '0.875rem' 
+                      }}>
+                        {perfil.situacao}
+                      </span>
+                    )}
                   </span>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px', color: 'var(--text-secondary)', flexWrap: 'wrap', fontSize: '0.875rem' }}>

@@ -16,7 +16,7 @@ const VisaoGeral = () => {
 
       <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '2rem 0' }} />
 
-      <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>Como Respondemos às Questões (Arquitetura da Interface)</h2>
+      <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>Arquitetura da Interface e Mapeamento de Requisitos</h2>
       <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
         A aplicação foi estruturada para responder aos requisitos do roteiro, distribuindo as informações nas seguintes abas da página:
       </p>
