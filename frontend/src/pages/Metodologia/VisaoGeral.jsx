@@ -4,11 +4,45 @@ const VisaoGeral = () => {
   return (
     <div className="metodologia-content">
       <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>Introdução</h2>
+
+      {/* Bloco de Disclaimer / Caráter Acadêmico */}
+      <div className="glass-card" style={{
+        background: 'rgba(59, 130, 246, 0.05)',
+        border: '1px solid rgba(59, 130, 246, 0.2)',
+        borderRadius: '12px',
+        padding: '20px',
+        marginBottom: '2rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px'
+      }}>
+        <h3 style={{ fontSize: '1.1rem', color: 'var(--accent-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          Aviso Importante &amp; Caráter Acadêmico
+        </h3>
+        <p style={{ margin: 0, fontSize: '0.925rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+          Este portal é um <strong>trabalho acadêmico estritamente pedagógico</strong>, sem qualquer associação política, partidária, ideológica ou fins lucrativos. A ferramenta foi desenvolvida para fins de estudo no âmbito da disciplina de Bancos de Dados Relacionais.
+        </p>
+        <p style={{ margin: 0, fontSize: '0.925rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+          Todas as informações exibidas são provenientes de <strong>dados públicos oficiais</strong>. Devido a eventuais inconformidades, desatualizações ou discrepâncias nos sistemas de dados abertos da Câmara dos Deputados, algumas métricas ou informações individuais podem aparecer incorretas. Para consultar os dados diretamente na fonte ou obter mais esclarecimentos sobre a API legislativa, acesse:
+        </p>
+        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', margin: '4px 0' }}>
+          <a href="https://dadosabertos.camara.leg.br/swagger/api.html?tab=staticfile" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-primary)', textDecoration: 'underline', fontSize: '0.875rem' }}>
+            Portal de Dados Abertos da Câmara
+          </a>
+          <a href="https://www.camara.leg.br/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-primary)', textDecoration: 'underline', fontSize: '0.875rem' }}>
+            Site Oficial da Câmara dos Deputados
+          </a>
+        </div>
+        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.6', borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '4px' }}>
+          * Os autores desta aplicação não se responsabilizam pela exatidão, integridade ou atualização dos dados replicados aqui, uma vez que eles são fornecidos de forma livre e pública pelas fontes oficiais competentes.
+        </p>
+      </div>
+
       <p style={{ marginBottom: '1.25rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-        Este projeto foi desenvolvido como atividade da disciplina de Bancos de Dados Relacionais (BDR). O objetivo central da aplicação é extrair, processar e analisar dados legislativos para responder a perguntas complexas sobre a atuação dos parlamentares brasileiros.
+        Este projeto foi desenvolvido como atividade da disciplina de Bancos de Dados Relacionais. O objetivo central da aplicação é extrair, processar e analisar dados legislativos para responder a perguntas complexas sobre a atuação dos parlamentares brasileiros.
       </p>
       <p style={{ marginBottom: '1.25rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-        Praticamente todos os dados utilizados neste projeto foram extraídos do portal de Dados Abertos da Câmara dos Deputados, abrangendo os anos de 2023 a 2026. Os dados passaram por um rigoroso processo de extração, limpeza e carga estruturada. Para responder a perguntas específicas e contornar limitações dos arquivos oficiais em CSV, desenvolvemos <em>scripts</em> customizados de integração com a API e de <em>web scraping</em> focados em extrair informações diretamente das páginas da Câmara.
+        Praticamente todos os dados utilizados neste projeto foram extraídos do portal de Dados Abertos da Câmara dos Deputados, abrangendo o período de 2023 até o primeiro semestre de 2026 (não contemplando o ano completo de 2026). Os dados passaram por um rigoroso processo de extração, limpeza e carga estruturada. Para responder a perguntas específicas e contornar limitações dos arquivos oficiais em CSV, desenvolvemos <em>scripts</em> customizados de integração com a API e de <em>web scraping</em> focados em extrair informações diretamente das páginas da Câmara.
       </p>
       <p style={{ marginBottom: '2rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
         A nossa aplicação expõe os resultados analíticos divididos em três seções de interface: <strong>Visão Geral</strong>, <strong>Visão Partidária</strong> e <strong>Tela Deputados</strong>.
