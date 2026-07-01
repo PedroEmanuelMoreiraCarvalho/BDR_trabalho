@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Search, BookOpen, Sun, Moon, X } from 'lucide-react';
+import { NavLink, useLocation, Link } from 'react-router-dom';
+import { LayoutDashboard, Users, Search, BookOpen, Sun, Moon, X, Info } from 'lucide-react';
 import './Sidebar.css';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -65,7 +65,16 @@ const Sidebar = ({ isOpen, onClose }) => {
         <div>
           <div className="sidebar-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <h2 className="text-gradient">Observatório Político</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h2 className="text-gradient" style={{ margin: 0 }}>Observatório Político</h2>
+                <Link to="/metodologia" className="info-tooltip-container" onClick={onClose}>
+                  <Info size={16} />
+                  <span className="info-tooltip-text">
+                    <strong>Trabalho Acadêmico</strong><br />
+                    Projeto acadêmico sem fins lucrativos/políticos, utilizando dados públicos. Inconsistências podem ocorrer na fonte original. Clique para ler a metodologia completa.
+                  </span>
+                </Link>
+              </div>
               <p className="subtitle">Análise da Câmara dos Deputados</p>
             </div>
             <button className="mobile-close-btn" onClick={onClose}>

@@ -112,3 +112,57 @@
     justify-content: center;
   }
 }
+
+/* Tooltip styles for the Sidebar and Mobile Header info icon */
+.info-tooltip-container {
+  position: relative;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.info-tooltip-container:hover {
+  color: var(--accent-primary);
+}
+
+.info-tooltip-text {
+  visibility: hidden;
+  width: 250px;
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  text-align: left;
+  border-radius: 8px;
+  padding: 12px;
+  position: absolute;
+  z-index: 1000;
+  top: 120%; /* Position below the icon */
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  pointer-events: none; /* Avoid blocking clicks */
+  font-weight: normal;
+  white-space: normal;
+}
+
+.info-tooltip-container:hover .info-tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* For mobile header alignment */
+@media (max-width: 1024px) {
+  .info-tooltip-text {
+    left: auto;
+    right: -80px; /* Offset to keep tooltip inside the viewport on mobile */
+    transform: none;
+    width: 220px;
+  }
+}
