@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { ChevronDown, ChevronUp, Filter, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DashboardAdapter from '../adapters/DashboardAdapter';
+import FooterDisclaimer from '../components/FooterDisclaimer';
 
 const DashboardNacional = () => {
   const navigate = useNavigate();
@@ -594,6 +595,7 @@ const DashboardNacional = () => {
         </div>
       </div>
 
+      <FooterDisclaimer />
     </div>
   );
 };

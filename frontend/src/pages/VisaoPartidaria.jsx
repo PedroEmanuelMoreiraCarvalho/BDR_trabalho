@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import DashboardAdapter from '../adapters/DashboardAdapter';
+import FooterDisclaimer from '../components/FooterDisclaimer';
 
 const VisaoPartidaria = () => {
   // ==========================================
@@ -266,6 +267,7 @@ const VisaoPartidaria = () => {
           </ResponsiveContainer>
         </div>
       </div>
+      <FooterDisclaimer />
     </div>
   );
 };

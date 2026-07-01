@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, MapPin, User as UserIcon, AlertCircle, Loader } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DashboardAdapter from '../adapters/DashboardAdapter';
+import FooterDisclaimer from '../components/FooterDisclaimer';
 
 const BuscaParlamentares = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -124,6 +125,7 @@ const BuscaParlamentares = () => {
           </div>
         )}
       </div>
+      <FooterDisclaimer />
     </div>
   );
 };
